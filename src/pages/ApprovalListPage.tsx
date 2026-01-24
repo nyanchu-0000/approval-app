@@ -110,7 +110,7 @@ export const ApprovalListPage: React.FC = () => {
             padding: '60px 20px',
             color: '#999'
           }}>
-            <div style={{ fontSize: '64px', marginBottom: '20px' }}>👥</div>
+            <div style={{ fontSize: '64px', marginBottom: '20px' }}></div>
             <p style={{ marginBottom: '8px' }}>フレンドがいません</p>
             <p style={{ fontSize: '14px' }}>
               プロフィール画面からフレンドを追加してください

@@ -180,7 +180,7 @@ export const ProfilePage: React.FC = () => {
           
           {!friendProfile ? (
             <div style={{ textAlign: 'center', padding: '20px' }}>
-              <div style={{ fontSize: '48px', marginBottom: '12px' }}>👥</div>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}></div>
               <p style={{ color: '#999', marginBottom: '16px' }}>
                 フレンドがいません
               </p>
