@@ -68,107 +68,280 @@ export const HomePage: React.FC = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '40px 20px',
+        padding: '24px 20px',
         minHeight: 'calc(100vh - 130px)'
       }}>
-        {/* ボタンエリア */}
+        {/* メインコンテンツカード */}
         <div style={{
+          width: '100%',
+          maxWidth: '500px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '20px',
-          justifyContent: 'center',
-          alignItems: 'center'
+          gap: '20px'
         }}>
-          <div
-            onClick={() => navigate('/create-post')}
-            style={{
-              backgroundColor: '#F5F1D4',
-              borderRadius: '20px',
-              padding: '40px 50px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 8px 20px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.08)',
-              transition: 'all 0.3s ease',
-              minWidth: '200px',
-              border: '2px solid rgba(123, 123, 123, 0.1)',
-              position: 'relative' as const,
-              overflow: 'hidden'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 12px 28px rgba(0,0,0,0.15), 0 6px 12px rgba(0,0,0,0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.08)';
-            }}
-          >
-            <div style={{ 
-              color: '#7B7B7B',
-              lineHeight: '1.3',
-              position: 'relative' as const,
-              zIndex: 1
+          {/* ウェルカムメッセージ */}
+          <div style={{
+            textAlign: 'center',
+            marginBottom: '8px'
+          }}>
+            <h2 style={{
+              margin: '0 0 8px 0',
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: '#333'
             }}>
-              <span style={{ fontSize: '48px', fontWeight: 'bold' }}>投稿</span>
-              <br />
-              <span style={{ fontSize: '24px', fontWeight: 'normal' }}>する</span>
-            </div>
-            <div style={{
-              position: 'absolute' as const,
-              bottom: '-10px',
-              right: '-10px',
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.3)',
-              zIndex: 0
-            }} />
+              ようこそ!
+            </h2>
+            <p style={{
+              margin: 0,
+              fontSize: '14px',
+              color: '#666',
+              lineHeight: '1.6'
+            }}>
+              友達と思い出を共有して、承認し合いましょう
+            </p>
           </div>
 
-          <div
-            onClick={() => navigate('/approvals')}
-            style={{
-              backgroundColor: '#F5F1D4',
-              borderRadius: '20px',
-              padding: '40px 50px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 8px 20px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.08)',
-              transition: 'all 0.3s ease',
-              minWidth: '200px',
-              border: '2px solid rgba(123, 123, 123, 0.1)',
-              position: 'relative' as const,
-              overflow: 'hidden'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 12px 28px rgba(0,0,0,0.15), 0 6px 12px rgba(0,0,0,0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.08)';
-            }}
-          >
-            <div style={{ 
-              color: '#7B7B7B',
-              lineHeight: '1.3',
-              position: 'relative' as const,
-              zIndex: 1
-            }}>
-              <span style={{ fontSize: '48px', fontWeight: 'bold' }}>承認</span>
-              <br />
-              <span style={{ fontSize: '24px', fontWeight: 'normal' }}>する</span>
+          {/* グリッドメニュー */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '16px',
+            marginBottom: '20px'
+          }}>
+            {/* 投稿ボックス */}
+            <div
+              onClick={() => navigate('/create-post')}
+              style={{
+                backgroundColor: '#B8D4E8',
+                borderRadius: '16px',
+                padding: '32px 20px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                aspectRatio: '1',
+                minHeight: '140px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+              }}
+            >
+              <div style={{
+                fontSize: '48px',
+                marginBottom: '12px',
+                filter: 'brightness(0) invert(1)'
+              }}>
+                📝
+              </div>
+              <div style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                投稿
+              </div>
             </div>
+
+            {/* 承認ボックス */}
+            <div
+              onClick={() => navigate('/approvals')}
+              style={{
+                backgroundColor: '#B8D4E8',
+                borderRadius: '16px',
+                padding: '32px 20px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                aspectRatio: '1',
+                minHeight: '140px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+              }}
+            >
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '32px',
+                marginBottom: '12px',
+                color: '#B8D4E8'
+              }}>
+                ✓
+              </div>
+              <div style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                承認
+              </div>
+            </div>
+
+            {/* 投稿一覧ボックス */}
+            <div
+              onClick={() => navigate('/posts')}
+              style={{
+                backgroundColor: '#B8D4E8',
+                borderRadius: '16px',
+                padding: '32px 20px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                aspectRatio: '1',
+                minHeight: '140px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+              }}
+            >
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '28px',
+                marginBottom: '12px'
+              }}>
+                📋
+              </div>
+              <div style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                投稿一覧
+              </div>
+            </div>
+
+            {/* プロフィールボックス */}
+            <div
+              onClick={() => navigate('/profile')}
+              style={{
+                backgroundColor: '#B8D4E8',
+                borderRadius: '16px',
+                padding: '32px 20px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                aspectRatio: '1',
+                minHeight: '140px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+              }}
+            >
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '28px',
+                marginBottom: '12px'
+              }}>
+                👤
+              </div>
+              <div style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                プロフィール
+              </div>
+            </div>
+          </div>
+
+          {/* お知らせカード */}
+          <div style={{
+            backgroundColor: '#B8D4E8',
+            borderRadius: '16px',
+            padding: '20px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px'
+          }}>
             <div style={{
-              position: 'absolute' as const,
-              bottom: '-10px',
-              right: '-10px',
-              width: '80px',
-              height: '80px',
+              width: '48px',
+              height: '48px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.3)',
-              zIndex: 0
-            }} />
+              backgroundColor: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '24px',
+              flexShrink: 0
+            }}>
+              💡
+            </div>
+            <div style={{ flex: 1 }}>
+              <h3 style={{
+                margin: '0 0 4px 0',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                color: 'white'
+              }}>
+                友達と思い出をシェアしよう
+              </h3>
+              <p style={{
+                margin: 0,
+                fontSize: '12px',
+                color: 'rgba(255,255,255,0.9)',
+                lineHeight: '1.4'
+              }}>
+                承認されると投稿が公開されます
+              </p>
+            </div>
           </div>
         </div>
       </div>
