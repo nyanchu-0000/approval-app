@@ -1,51 +1,97 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '../components/common/Header';
 import { Footer } from '../components/common/Footer';
 import { PostCard } from '../components/post/PostCard';
 import { ApprovalButton } from '../components/approval/ApprovalButton';
 import { Post } from '../types';
-
-// ダミーデータ
-const dummyFriendPosts: Post[] = [
-  {
-    id: '3',
-    userId: 'friend1',
-    username: 'フレンド1',
-    userProfileIcon: '/dummy-app-icon.svg',
-    title: '週末に行ったカフェ',
-    content: '素敵なカフェを見つけました！雰囲気も良くて、コーヒーも美味しかったです。また行きたいな。',
-    imageUrl: undefined,
-    targetFriendId: 'user1',
-    approvals: [],
-    createdAt: new Date('2024-01-21T10:00:00'),
-    updatedAt: new Date('2024-01-21T10:00:00')
-  },
-  {
-    id: '4',
-    userId: 'friend2',
-    username: 'フレンド2',
-    userProfileIcon: '/dummy-app-icon.svg',
-    title: '新しい本を読み始めた',
-    content: 'ミステリー小説にハマっています。続きが気になって仕方がない！',
-    imageUrl: undefined,
-    targetFriendId: 'user1',
-    approvals: [
-      {
-        userId: 'user1',
-        username: 'あなた',
-        approved: true,
-        timestamp: new Date('2024-01-20T14:00:00')
-      }
-    ],
-    createdAt: new Date('2024-01-20T13:00:00'),
-    updatedAt: new Date('2024-01-20T13:00:00')
-  }
-];
+import { User } from '../types/user';
 
 export const ApprovalListPage: React.FC = () => {
+  const [friendPosts, setFriendPosts] = useState<Post[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [hasFriend, setHasFriend] = useState(false);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = () => {
+    // 現在のユーザー情報を取得
+    const userDataStr = localStorage.getItem('currentUser');
+    if (!userDataStr) return;
+
+    const userData: User = JSON.parse(userDataStr);
+    setCurrentUser(userData);
+
+    // フレンドがいない場合は何も表示しない
+    if (!userData.friendId) {
+      setHasFriend(false);
+      return;
+    }
+
+    setHasFriend(true);
+
+    // フレンドの投稿を取得
+    const existingPosts = localStorage.getItem('posts');
+    if (existingPosts) {
+      const allPosts = JSON.parse(existingPosts);
+      // フレンドの投稿のみフィルタリング
+      const friendPostsData = allPosts
+        .filter((post: any) => post.userId === userData.friendId)
+        .map((post: any) => ({
+          ...post,
+          createdAt: new Date(post.createdAt),
+          updatedAt: new Date(post.updatedAt),
+          approvals: post.approvals.map((approval: any) => ({
+            ...approval,
+            timestamp: new Date(approval.timestamp)
+          }))
+        }));
+      setFriendPosts(friendPostsData);
+    }
+  };
+
   const handleApproval = (postId: string) => {
-    // TODO: 承認処理
-    console.log('Approve post:', postId);
+    if (!currentUser) return;
+
+    const existingPosts = localStorage.getItem('posts');
+    if (!existingPosts) return;
+
+    const allPosts = JSON.parse(existingPosts);
+    const updatedPosts = allPosts.map((post: any) => {
+      if (post.id === postId) {
+        // すでに承認しているか確認
+        const alreadyApproved = post.approvals.some(
+          (a: any) => a.userId === currentUser.uid
+        );
+
+        if (alreadyApproved) {
+          // 承認を取り消す
+          return {
+            ...post,
+            approvals: post.approvals.filter((a: any) => a.userId !== currentUser.uid)
+          };
+        } else {
+          // 承認を追加
+          return {
+            ...post,
+            approvals: [
+              ...post.approvals,
+              {
+                userId: currentUser.uid,
+                username: currentUser.username,
+                approved: true,
+                timestamp: new Date()
+              }
+            ]
+          };
+        }
+      }
+      return post;
+    });
+
+    localStorage.setItem('posts', JSON.stringify(updatedPosts));
+    loadData();
   };
 
   return (
@@ -58,18 +104,32 @@ export const ApprovalListPage: React.FC = () => {
       <Header title="承認一覧" />
       
       <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-        {dummyFriendPosts.length === 0 ? (
+        {!hasFriend ? (
+          <div style={{
+            textAlign: 'center',
+            padding: '60px 20px',
+            color: '#999'
+          }}>
+            <div style={{ fontSize: '64px', marginBottom: '20px' }}>👥</div>
+            <p style={{ marginBottom: '8px' }}>フレンドがいません</p>
+            <p style={{ fontSize: '14px' }}>
+              プロフィール画面からフレンドを追加してください
+            </p>
+          </div>
+        ) : friendPosts.length === 0 ? (
           <div style={{
             textAlign: 'center',
             padding: '60px 20px',
             color: '#999'
           }}>
             <div style={{ fontSize: '64px', marginBottom: '20px' }}>👋</div>
-            <p>フレンドの投稿がありません</p>
+            <p>フレンドの投稿がまだありません</p>
           </div>
         ) : (
-          dummyFriendPosts.map((post) => {
-            const isApproved = post.approvals.some(a => a.approved);
+          friendPosts.map((post) => {
+            const isApproved = post.approvals.some(
+              a => currentUser && a.userId === currentUser.uid && a.approved
+            );
             return (
               <div key={post.id} style={{ marginBottom: '20px' }}>
                 <PostCard post={post} />

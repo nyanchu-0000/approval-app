@@ -1,26 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/common/Header';
 import { Footer } from '../components/common/Footer';
 import { ImageUpload } from '../components/post/ImageUpload';
 import { Button } from '../components/common/Button';
+import { User } from '../types/user';
 
 export const CreatePostPage: React.FC = () => {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [image, setImage] = useState<File | null>(null);
-  const [selectedFriend, setSelectedFriend] = useState('');
+  const [showNotification, setShowNotification] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // 現在のユーザー情報を取得
+    const userDataStr = localStorage.getItem('currentUser');
+    if (userDataStr) {
+      const userData = JSON.parse(userDataStr);
+      setCurrentUser(userData);
+    }
+  }, []);
 
   const handleSubmit = async () => {
+    if (!currentUser) {
+      alert('ユーザー情報が見つかりません');
+      return;
+    }
+
     // TODO: Firebase に保存する処理
-    console.log({ title, content, image, selectedFriend });
+    const newPost = {
+      id: Date.now().toString(),
+      userId: currentUser.uid,
+      username: currentUser.username,
+      userProfileIcon: currentUser.profileIcon,
+      title,
+      content,
+      imageUrl: image ? URL.createObjectURL(image) : undefined,
+      targetFriendId: currentUser.friendId || '',
+      approvals: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
     
-    // 投稿後画面に遷移
-    navigate('/post-success');
+    // localStorageに保存（仮実装）
+    const existingPosts = localStorage.getItem('posts');
+    const posts = existingPosts ? JSON.parse(existingPosts) : [];
+    posts.unshift(newPost);
+    localStorage.setItem('posts', JSON.stringify(posts));
+    
+    // 通知を表示
+    setShowNotification(true);
+    
+    // 1.5秒後に投稿一覧に遷移
+    setTimeout(() => {
+      navigate('/posts');
+    }, 1500);
   };
 
-  const canSubmit = title.trim() !== '' && content.trim() !== '' && selectedFriend !== '';
+  const canSubmit = title.trim() !== '' && content.trim() !== '';
 
   return (
     <div style={{
@@ -96,35 +135,6 @@ export const CreatePostPage: React.FC = () => {
           />
         </div>
 
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '8px', 
-            fontWeight: 'bold',
-            color: '#333'
-          }}>
-            フレンド
-          </label>
-          <select
-            value={selectedFriend}
-            onChange={(e) => setSelectedFriend(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px',
-              borderRadius: '8px',
-              border: '1px solid #ddd',
-              fontSize: '16px',
-              boxSizing: 'border-box',
-              backgroundColor: 'white'
-            }}
-          >
-            <option value="">選択してください</option>
-            {/* TODO: フレンド一覧を取得して表示 */}
-            <option value="friend1">フレンド1（ダミー）</option>
-            <option value="friend2">フレンド2（ダミー）</option>
-          </select>
-        </div>
-
         <Button
           onClick={handleSubmit}
           fullWidth
@@ -133,6 +143,40 @@ export const CreatePostPage: React.FC = () => {
           投稿
         </Button>
       </div>
+
+      {/* プッシュアップ通知 */}
+      {showNotification && (
+        <div style={{
+          position: 'fixed',
+          top: '80px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: '#4a9d8f',
+          color: 'white',
+          padding: '16px 32px',
+          borderRadius: '12px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+          zIndex: 2000,
+          animation: 'slideDown 0.3s ease-out',
+          fontSize: '16px',
+          fontWeight: 'bold'
+        }}>
+          ✓ 投稿されました
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+        }
+      `}</style>
 
       <Footer />
     </div>

@@ -7,6 +7,7 @@ import { PostSuccessPage } from './pages/PostSuccessPage';
 import { PostListPage } from './pages/PostListPage';
 import { ApprovalListPage } from './pages/ApprovalListPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { AddFriendPage } from './pages/AddFriendPage';
 import './App.css';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/posts" element={<PostListPage />} />
         <Route path="/approvals" element={<ApprovalListPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/add-friend" element={<AddFriendPage />} />
       </Routes>
     </BrowserRouter>
   );

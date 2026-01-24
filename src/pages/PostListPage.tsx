@@ -1,47 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '../components/common/Header';
 import { Footer } from '../components/common/Footer';
 import { PostCard } from '../components/post/PostCard';
 import { Post } from '../types';
-
-// ダミーデータ
-const dummyPosts: Post[] = [
-  {
-    id: '1',
-    userId: 'user1',
-    username: 'あなた',
-    userProfileIcon: '/dummy-app-icon.svg',
-    title: '今日のランチ',
-    content: '美味しいパスタを食べました！とても美味しかったです。',
-    imageUrl: undefined,
-    targetFriendId: 'friend1',
-    approvals: [
-      {
-        userId: 'friend1',
-        username: 'フレンド1',
-        approved: true,
-        timestamp: new Date('2024-01-20T12:00:00')
-      }
-    ],
-    createdAt: new Date('2024-01-20T11:00:00'),
-    updatedAt: new Date('2024-01-20T11:00:00')
-  },
-  {
-    id: '2',
-    userId: 'user1',
-    username: 'あなた',
-    userProfileIcon: '/dummy-app-icon.svg',
-    title: '新しい趣味',
-    content: '最近写真を撮るのにハマっています。カメラを買いたいな。',
-    imageUrl: undefined,
-    targetFriendId: 'friend2',
-    approvals: [],
-    createdAt: new Date('2024-01-19T15:00:00'),
-    updatedAt: new Date('2024-01-19T15:00:00')
-  }
-];
+import { User } from '../types/user';
 
 export const PostListPage: React.FC = () => {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    loadPosts();
+  }, []);
+
+  const loadPosts = () => {
+    // 現在のユーザー情報を取得
+    const userDataStr = localStorage.getItem('currentUser');
+    if (!userDataStr) return;
+
+    const userData: User = JSON.parse(userDataStr);
+    setCurrentUser(userData);
+
+    // localStorageから投稿を読み込む
+    const existingPosts = localStorage.getItem('posts');
+    if (existingPosts) {
+      const parsedPosts = JSON.parse(existingPosts);
+      // 現在のユーザーの投稿のみをフィルタリング
+      const userPosts = parsedPosts
+        .filter((post: any) => post.userId === userData.uid)
+        .map((post: any) => ({
+          ...post,
+          createdAt: new Date(post.createdAt),
+          updatedAt: new Date(post.updatedAt),
+          approvals: post.approvals.map((approval: any) => ({
+            ...approval,
+            timestamp: new Date(approval.timestamp)
+          }))
+        }));
+      setPosts(userPosts);
+    }
+  };
   return (
     <div style={{
       minHeight: '100vh',
@@ -52,7 +50,7 @@ export const PostListPage: React.FC = () => {
       <Header title="投稿一覧" />
       
       <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-        {dummyPosts.length === 0 ? (
+        {posts.length === 0 ? (
           <div style={{
             textAlign: 'center',
             padding: '60px 20px',
@@ -62,7 +60,7 @@ export const PostListPage: React.FC = () => {
             <p>まだ投稿がありません</p>
           </div>
         ) : (
-          dummyPosts.map((post) => (
+          posts.map((post) => (
             <PostCard
               key={post.id}
               post={post}
