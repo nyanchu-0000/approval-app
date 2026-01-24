@@ -2,8 +2,6 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/common/Header';
 import { Footer } from '../components/common/Footer';
-import { Button } from '../components/common/Button';
-import { ProfileIcon } from '../components/common/ProfileIcon';
 import type { User } from '../types/user';
 
 export const HomePage: React.FC = () => {
@@ -231,15 +229,16 @@ export const HomePage: React.FC = () => {
               <div style={{
                 width: '56px',
                 height: '56px',
-                borderRadius: '50%',
-                backgroundColor: 'white',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '28px',
                 marginBottom: '12px'
               }}>
-                📋
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="56" height="56">
+                  <rect x="20" y="8" width="88" height="112" rx="4" fill="#ffffff"/>
+                  <rect x="32" y="24" width="64" height="6" rx="3" fill="#B8D4E8"/>
+                  <line x1="32" y1="8" x2="32" y2="120" stroke="#B8D4E8" strokeWidth="4"/>
+                </svg>
               </div>
               <div style={{
                 fontSize: '16px',
@@ -280,15 +279,15 @@ export const HomePage: React.FC = () => {
               <div style={{
                 width: '56px',
                 height: '56px',
-                borderRadius: '50%',
-                backgroundColor: 'white',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '28px',
                 marginBottom: '12px'
               }}>
-                👤
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="56" height="56">
+                  <circle cx="64" cy="36" r="24" fill="#ffffff"/>
+                  <path fill="#ffffff" d="M96 84c0-17.673-14.327-32-32-32s-32 14.327-32 32v44h64V84z"/>
+                </svg>
               </div>
               <div style={{
                 fontSize: '16px',
