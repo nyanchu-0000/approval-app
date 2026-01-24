@@ -30,6 +30,9 @@ export const PostListPage: React.FC = () => {
         .filter((post: any) => post.userId === userData.uid)
         .map((post: any) => ({
           ...post,
+          // プロフィールから最新の情報を取得
+          username: userData.username,
+          userProfileIcon: userData.profileIcon,
           createdAt: new Date(post.createdAt),
           updatedAt: new Date(post.updatedAt),
           approvals: post.approvals.map((approval: any) => ({

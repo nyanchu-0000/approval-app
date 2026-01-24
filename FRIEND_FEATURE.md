@@ -112,3 +112,4 @@ interface FriendStatus {
 - フレンド申請の通知機能
 - フレンド解除の確認ダイアログ改善
 
+

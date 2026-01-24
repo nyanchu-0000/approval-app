@@ -1,15 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/common/Header';
 import { Footer } from '../components/common/Footer';
 import { ProfileIcon } from '../components/common/ProfileIcon';
 import { Button } from '../components/common/Button';
-import { User, UserProfile } from '../types/user';
+import type { User, UserProfile } from '../types/user';
 
 export const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [friendProfile, setFriendProfile] = useState<UserProfile | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editUsername, setEditUsername] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadUserData();
@@ -21,6 +25,8 @@ export const ProfilePage: React.FC = () => {
     if (userDataStr) {
       const userData: User = JSON.parse(userDataStr);
       setCurrentUser(userData);
+      setEditUsername(userData.username || 'ユーザーネーム');
+      setEditBio(userData.bio || '');
 
       // フレンドがいる場合、フレンドの情報を取得
       if (userData.friendId) {
@@ -38,6 +44,130 @@ export const ProfilePage: React.FC = () => {
         }
       }
     }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+
+    // 画像をリサイズしてBase64に変換
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        // Canvasで画像をリサイズ（最大サイズ: 300x300）
+        const canvas = document.createElement('canvas');
+        const maxSize = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxSize) {
+            height *= maxSize / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width *= maxSize / height;
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Base64に変換（品質を調整してサイズを削減）
+        const base64String = canvas.toDataURL('image/jpeg', 0.8);
+        
+        // ユーザー情報を更新（profileIconとprofileIconUrlの両方を更新）
+        const updatedUser = {
+          ...currentUser,
+          profileIcon: base64String,
+          profileIconUrl: base64String
+        };
+
+        // localStorageを更新
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+        // allUsersも更新
+        const allUsersStr = localStorage.getItem('allUsers');
+        if (allUsersStr) {
+          const allUsers: User[] = JSON.parse(allUsersStr);
+          const updatedUsers = allUsers.map(u => 
+            u.uid === currentUser.uid ? updatedUser : u
+          );
+          localStorage.setItem('allUsers', JSON.stringify(updatedUsers));
+        }
+
+        // 既存の投稿のプロフィール画像も更新
+        updatePostsProfile(base64String, currentUser.username);
+
+        setCurrentUser(updatedUser);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleEditProfile = () => {
+    setIsEditing(true);
+  };
+
+  const updatePostsProfile = (profileIcon: string, username: string) => {
+    // 既存の投稿のプロフィール情報を更新
+    const existingPostsStr = localStorage.getItem('posts');
+    if (existingPostsStr) {
+      const posts = JSON.parse(existingPostsStr);
+      const updatedPosts = posts.map((post: any) => {
+        if (post.userId === currentUser?.uid) {
+          return {
+            ...post,
+            userProfileIcon: profileIcon,
+            username: username
+          };
+        }
+        return post;
+      });
+      localStorage.setItem('posts', JSON.stringify(updatedPosts));
+    }
+  };
+
+  const handleSaveProfile = () => {
+    if (!currentUser) return;
+
+    const updatedUser = {
+      ...currentUser,
+      username: editUsername,
+      bio: editBio,
+      updatedAt: new Date()
+    };
+
+    // localStorageを更新
+    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+    // allUsersも更新
+    const allUsersStr = localStorage.getItem('allUsers');
+    if (allUsersStr) {
+      const allUsers: User[] = JSON.parse(allUsersStr);
+      const updatedUsers = allUsers.map(u => 
+        u.uid === currentUser.uid ? updatedUser : u
+      );
+      localStorage.setItem('allUsers', JSON.stringify(updatedUsers));
+    }
+
+    // 既存の投稿のプロフィール情報も更新
+    updatePostsProfile(currentUser.profileIcon || '', editUsername);
+
+    setCurrentUser(updatedUser);
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditUsername(currentUser?.username || 'ユーザーネーム');
+    setEditBio(currentUser?.bio || '');
+    setIsEditing(false);
   };
 
   const handleRemoveFriend = () => {
@@ -96,52 +226,188 @@ export const ProfilePage: React.FC = () => {
           textAlign: 'center'
         }}>
           {/* プロフィールアイコン - クリック可能 */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            style={{ display: 'none' }}
+          />
+          
           <div 
             style={{ 
               marginBottom: '16px',
               cursor: 'pointer',
-              display: 'inline-block'
+              display: 'inline-block',
+              position: 'relative'
             }}
-            onClick={() => {
-              // TODO: プロフィール画像変更機能を実装
-              alert('プロフィール画像の変更機能は今後実装予定です');
-            }}
+            onClick={() => fileInputRef.current?.click()}
           >
-            <div style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '50%',
-              backgroundColor: '#e0e0e0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto',
-              fontSize: '14px',
-              color: '#999',
-              border: '3px dashed #ccc',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#4a9d8f';
-              e.currentTarget.style.backgroundColor = '#f0f4f8';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = '#ccc';
-              e.currentTarget.style.backgroundColor = '#e0e0e0';
-            }}
-            >
-              プロフィール<br/>アイコン
-            </div>
+            {currentUser?.profileIcon && currentUser.profileIcon !== '/dummy-app-icon.svg' && currentUser.profileIcon.length > 20 ? (
+              <div style={{ position: 'relative' }}>
+                <img
+                  src={currentUser.profileIcon}
+                  alt="プロフィール"
+                  style={{
+                    width: '120px',
+                    height: '120px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '2px solid #E5E5E5'
+                  }}
+                />
+                {/* +ボタン */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '0',
+                  right: '0',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: '#2C2C2E',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '3px solid white',
+                  color: 'white',
+                  fontSize: '24px',
+                  fontWeight: '300',
+                  lineHeight: '1'
+                }}>
+                  +
+                </div>
+              </div>
+            ) : (
+              <div style={{ position: 'relative' }}>
+                <div style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  backgroundColor: '#B0B0B0',
+                  border: '2px solid #E5E5E5',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {/* 人物アイコンSVG */}
+                  <svg 
+                    width="120" 
+                    height="120" 
+                    viewBox="0 0 100 100"
+                    style={{ position: 'absolute' }}
+                  >
+                    {/* 頭部 */}
+                    <circle cx="50" cy="35" r="15" fill="white" />
+                    {/* 体部 */}
+                    <path 
+                      d="M 25 80 Q 25 57 50 57 Q 75 57 75 80 L 75 100 L 25 100 Z" 
+                      fill="white" 
+                    />
+                  </svg>
+                  {/* 下部の装飾ドット */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '18px',
+                    left: 0,
+                    right: 0,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    opacity: 0.5
+                  }}>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'white' }} />
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'white' }} />
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'white' }} />
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'white' }} />
+                  </div>
+                </div>
+                {/* +ボタン */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '0',
+                  right: '0',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: '#2C2C2E',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '3px solid white',
+                  color: 'white',
+                  fontSize: '24px',
+                  fontWeight: '300',
+                  lineHeight: '1'
+                }}>
+                  +
+                </div>
+              </div>
+            )}
           </div>
           
-          <h2 style={{
-            fontSize: '24px',
-            fontWeight: 'bold',
-            color: '#333',
-            marginBottom: '16px'
-          }}>
-            ユーザーネーム
-          </h2>
+          {isEditing ? (
+            <div style={{ marginBottom: '16px' }}>
+              <input
+                type="text"
+                value={editUsername}
+                onChange={(e) => setEditUsername(e.target.value)}
+                placeholder="ユーザーネーム"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  fontSize: '18px',
+                  border: '2px solid #e0e0e0',
+                  borderRadius: '8px',
+                  marginBottom: '12px',
+                  boxSizing: 'border-box',
+                  textAlign: 'center',
+                  fontWeight: 'bold'
+                }}
+              />
+              <textarea
+                value={editBio}
+                onChange={(e) => setEditBio(e.target.value)}
+                placeholder="自己紹介を入力してください"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  fontSize: '14px',
+                  border: '2px solid #e0e0e0',
+                  borderRadius: '8px',
+                  marginBottom: '12px',
+                  boxSizing: 'border-box',
+                  minHeight: '80px',
+                  resize: 'vertical',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+          ) : (
+            <>
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: '#333',
+                marginBottom: '8px'
+              }}>
+                {currentUser?.username || 'ユーザーネーム'}
+              </h2>
+
+              {currentUser?.bio && (
+                <p style={{
+                  fontSize: '14px',
+                  color: '#666',
+                  marginBottom: '16px',
+                  lineHeight: '1.6',
+                  whiteSpace: 'pre-wrap'
+                }}>
+                  {currentUser.bio}
+                </p>
+              )}
+            </>
+          )}
 
           <div style={{
             backgroundColor: '#f0f4f8',
@@ -156,9 +422,20 @@ export const ProfilePage: React.FC = () => {
             ID: {currentUser?.uid || 'A1B2C3D4'}
           </div>
 
-          <Button variant="outline" fullWidth>
-            プロフィールを編集
-          </Button>
+          {isEditing ? (
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <Button variant="outline" fullWidth onClick={handleCancelEdit}>
+                キャンセル
+              </Button>
+              <Button fullWidth onClick={handleSaveProfile}>
+                保存
+              </Button>
+            </div>
+          ) : (
+            <Button variant="outline" fullWidth onClick={handleEditProfile}>
+              プロフィールを編集
+            </Button>
+          )}
         </div>
 
         {/* フレンド情報 */}
@@ -253,14 +530,23 @@ export const ProfilePage: React.FC = () => {
                 フレンドを追加
               </Button>
             ) : (
-              <Button 
-                variant="outline" 
-                fullWidth
+              <div
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  backgroundColor: 'transparent',
+                  border: '2px solid #d32f2f',
+                  borderRadius: '8px',
+                  color: '#d32f2f',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
                 onClick={handleRemoveFriend}
-                style={{ color: '#d32f2f', borderColor: '#d32f2f' }}
               >
                 フレンドを解除
-              </Button>
+              </div>
             )}
           </div>
         </div>

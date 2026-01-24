@@ -11,6 +11,7 @@ export const CreatePostPage: React.FC = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [image, setImage] = useState<File | null>(null);
+  const [imageBase64, setImageBase64] = useState<string | undefined>(undefined);
   const [showNotification, setShowNotification] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
@@ -22,6 +23,46 @@ export const CreatePostPage: React.FC = () => {
       setCurrentUser(userData);
     }
   }, []);
+
+  const handleImageSelect = (file: File) => {
+    setImage(file);
+    
+    // 画像をBase64に変換
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // Canvasで画像をリサイズ（最大サイズ: 800x800）
+        const canvas = document.createElement('canvas');
+        const maxSize = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxSize) {
+            height *= maxSize / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width *= maxSize / height;
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Base64に変換
+        const base64String = canvas.toDataURL('image/jpeg', 0.8);
+        setImageBase64(base64String);
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async () => {
     if (!currentUser) {
@@ -37,7 +78,7 @@ export const CreatePostPage: React.FC = () => {
       userProfileIcon: currentUser.profileIcon,
       title,
       content,
-      imageUrl: image ? URL.createObjectURL(image) : undefined,
+      imageUrl: imageBase64,
       targetFriendId: currentUser.friendId || '',
       approvals: [],
       createdAt: new Date(),
@@ -105,7 +146,7 @@ export const CreatePostPage: React.FC = () => {
           }}>
             画像
           </label>
-          <ImageUpload onImageSelect={setImage} />
+          <ImageUpload onImageSelect={handleImageSelect} />
         </div>
 
         <div style={{ marginBottom: '20px' }}>

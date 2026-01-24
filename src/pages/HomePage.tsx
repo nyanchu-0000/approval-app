@@ -4,7 +4,7 @@ import { Header } from '../components/common/Header';
 import { Footer } from '../components/common/Footer';
 import { Button } from '../components/common/Button';
 import { ProfileIcon } from '../components/common/ProfileIcon';
-import { User } from '../types/user';
+import type { User } from '../types/user';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +24,8 @@ export const HomePage: React.FC = () => {
         username: 'ユーザー',
         email: 'user@example.com',
         profileIcon: '/dummy-app-icon.svg',
+        profileIconUrl: undefined,
+        bio: '',
         friendId: null,
         friendRequestTo: null,
         friendRequestFrom: null,

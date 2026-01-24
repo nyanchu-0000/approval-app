@@ -371,3 +371,4 @@ export const AddFriendPage: React.FC = () => {
   );
 };
 
+
