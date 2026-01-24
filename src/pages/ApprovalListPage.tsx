@@ -66,13 +66,14 @@ export const ApprovalListPage: React.FC = () => {
         );
 
         if (alreadyApproved) {
-          // 承認を取り消す
+          // 承認を取り消す（全てのフィールドを保持）
           return {
             ...post,
-            approvals: post.approvals.filter((a: any) => a.userId !== currentUser.uid)
+            approvals: post.approvals.filter((a: any) => a.userId !== currentUser.uid),
+            updatedAt: new Date().toISOString()
           };
         } else {
-          // 承認を追加
+          // 承認を追加（全てのフィールドを保持）
           return {
             ...post,
             approvals: [
@@ -81,9 +82,10 @@ export const ApprovalListPage: React.FC = () => {
                 userId: currentUser.uid,
                 username: currentUser.username,
                 approved: true,
-                timestamp: new Date()
+                timestamp: new Date().toISOString()
               }
-            ]
+            ],
+            updatedAt: new Date().toISOString()
           };
         }
       }

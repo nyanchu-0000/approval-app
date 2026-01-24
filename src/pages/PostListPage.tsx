@@ -25,23 +25,49 @@ export const PostListPage: React.FC = () => {
     const existingPosts = localStorage.getItem('posts');
     if (existingPosts) {
       const parsedPosts = JSON.parse(existingPosts);
+      console.log('全投稿数:', parsedPosts.length);
+      
       // 現在のユーザーの投稿のみをフィルタリング
       const userPosts = parsedPosts
         .filter((post: any) => post.userId === userData.uid)
-        .map((post: any) => ({
-          ...post,
-          // プロフィールから最新の情報を取得
-          username: userData.username,
-          userProfileIcon: userData.profileIcon,
-          createdAt: new Date(post.createdAt),
-          updatedAt: new Date(post.updatedAt),
-          approvals: post.approvals.map((approval: any) => ({
-            ...approval,
-            timestamp: new Date(approval.timestamp)
-          }))
-        }));
+        .map((post: any) => {
+          console.log('投稿ID:', post.id, 'imageUrl存在:', !!post.imageUrl, 'imageUrl長さ:', post.imageUrl?.length);
+          return {
+            id: post.id,
+            userId: post.userId,
+            username: userData.username, // プロフィールから最新の情報を取得
+            userProfileIcon: userData.profileIcon, // プロフィールから最新の情報を取得
+            title: post.title,
+            content: post.content,
+            imageUrl: post.imageUrl, // 画像URLを保持
+            targetFriendId: post.targetFriendId,
+            createdAt: new Date(post.createdAt),
+            updatedAt: new Date(post.updatedAt),
+            approvals: post.approvals.map((approval: any) => ({
+              ...approval,
+              timestamp: new Date(approval.timestamp)
+            }))
+          };
+        });
+      console.log('ユーザーの投稿数:', userPosts.length);
       setPosts(userPosts);
     }
+  };
+
+  const handleDeletePost = (postId: string) => {
+    // localStorageから全投稿を取得
+    const existingPosts = localStorage.getItem('posts');
+    if (!existingPosts) return;
+
+    const parsedPosts = JSON.parse(existingPosts);
+    // 削除する投稿以外をフィルタリング
+    const updatedPosts = parsedPosts.filter((post: any) => post.id !== postId);
+    
+    // localStorageを更新
+    localStorage.setItem('posts', JSON.stringify(updatedPosts));
+    
+    // 画面を再読み込み
+    loadPosts();
   };
   return (
     <div style={{
@@ -72,6 +98,7 @@ export const PostListPage: React.FC = () => {
                 // TODO: 投稿詳細ページに遷移
                 console.log('Post clicked:', post.id);
               }}
+              onDelete={() => handleDeletePost(post.id)}
             />
           ))
         )}

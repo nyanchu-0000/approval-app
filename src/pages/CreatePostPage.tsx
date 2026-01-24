@@ -55,8 +55,8 @@ export const CreatePostPage: React.FC = () => {
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
 
-        // Base64に変換
-        const base64String = canvas.toDataURL('image/jpeg', 0.8);
+        // Base64に変換（画質を0.7に設定してサイズを削減）
+        const base64String = canvas.toDataURL('image/jpeg', 0.7);
         setImageBase64(base64String);
       };
       img.src = e.target?.result as string;
@@ -78,18 +78,26 @@ export const CreatePostPage: React.FC = () => {
       userProfileIcon: currentUser.profileIcon,
       title,
       content,
-      imageUrl: imageBase64,
+      imageUrl: imageBase64, // Base64形式の画像データ
       targetFriendId: currentUser.friendId || '',
       approvals: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: new Date().toISOString(), // ISO文字列として保存
+      updatedAt: new Date().toISOString()
     };
     
     // localStorageに保存（仮実装）
     const existingPosts = localStorage.getItem('posts');
     const posts = existingPosts ? JSON.parse(existingPosts) : [];
     posts.unshift(newPost);
-    localStorage.setItem('posts', JSON.stringify(posts));
+    
+    try {
+      localStorage.setItem('posts', JSON.stringify(posts));
+      console.log('投稿を保存しました:', newPost);
+    } catch (error) {
+      console.error('localStorageへの保存に失敗しました:', error);
+      alert('投稿の保存に失敗しました。画像サイズが大きすぎる可能性があります。');
+      return;
+    }
     
     // 通知を表示
     setShowNotification(true);
