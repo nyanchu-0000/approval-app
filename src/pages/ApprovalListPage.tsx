@@ -3,8 +3,8 @@ import { Header } from '../components/common/Header';
 import { Footer } from '../components/common/Footer';
 import { PostCard } from '../components/post/PostCard';
 import { ApprovalButton } from '../components/approval/ApprovalButton';
-import { Post } from '../types';
-import { User } from '../types/user';
+import type { Post } from '../types';
+import type { User } from '../types/user';
 
 export const ApprovalListPage: React.FC = () => {
   const [friendPosts, setFriendPosts] = useState<Post[]>([]);
