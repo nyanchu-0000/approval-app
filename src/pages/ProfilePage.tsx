@@ -13,6 +13,7 @@ export const ProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editUsername, setEditUsername] = useState('');
   const [editBio, setEditBio] = useState('');
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -204,6 +205,21 @@ export const ProfilePage: React.FC = () => {
 
     // 状態を更新
     loadUserData();
+  };
+
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    // localStorageからcurrentUserを削除
+    localStorage.removeItem('currentUser');
+    // ホームページに遷移
+    navigate('/');
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutModal(false);
   };
 
   return (
@@ -567,48 +583,97 @@ export const ProfilePage: React.FC = () => {
             設定
           </h3>
           
-          <button style={{
-            width: '100%',
-            padding: '12px',
-            backgroundColor: 'transparent',
-            border: 'none',
-            textAlign: 'left',
-            fontSize: '16px',
-            color: '#333',
-            cursor: 'pointer',
-            borderBottom: '1px solid #f0f0f0'
-          }}>
-            通知設定
-          </button>
-          
-          <button style={{
-            width: '100%',
-            padding: '12px',
-            backgroundColor: 'transparent',
-            border: 'none',
-            textAlign: 'left',
-            fontSize: '16px',
-            color: '#333',
-            cursor: 'pointer',
-            borderBottom: '1px solid #f0f0f0'
-          }}>
-            プライバシー設定
-          </button>
-          
-          <button style={{
-            width: '100%',
-            padding: '12px',
-            backgroundColor: 'transparent',
-            border: 'none',
-            textAlign: 'left',
-            fontSize: '16px',
-            color: '#d32f2f',
-            cursor: 'pointer'
-          }}>
+          <button 
+            onClick={handleLogoutClick}
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              textAlign: 'left',
+              fontSize: '16px',
+              color: '#d32f2f',
+              cursor: 'pointer'
+            }}
+          >
             ログアウト
           </button>
         </div>
       </div>
+
+      {/* ログアウト確認モーダル */}
+      {showLogoutModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '30px',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+          }}>
+            <h3 style={{
+              fontSize: '20px',
+              fontWeight: 'bold',
+              color: '#333',
+              marginBottom: '16px',
+              textAlign: 'center'
+            }}>
+              ログアウトしますか？
+            </h3>
+            
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              marginTop: '24px'
+            }}>
+              <button
+                onClick={handleLogoutCancel}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  backgroundColor: 'white',
+                  border: '2px solid #e0e0e0',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  color: '#333',
+                  cursor: 'pointer'
+                }}
+              >
+                いいえ
+              </button>
+              <button
+                onClick={handleLogoutConfirm}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  backgroundColor: '#d32f2f',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  color: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                はい
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
