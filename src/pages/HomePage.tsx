@@ -301,15 +301,28 @@ export const HomePage: React.FC = () => {
           </div>
 
           {/* お知らせカード */}
-          <div style={{
-            backgroundColor: '#B8D4E8',
-            borderRadius: '16px',
-            padding: '20px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px'
-          }}>
+          <div
+            onClick={() => navigate('/rank-items')}
+            style={{
+              backgroundColor: '#B8D4E8',
+              borderRadius: '16px',
+              padding: '20px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+            }}
+          >
             <div style={{
               width: '48px',
               height: '48px',
