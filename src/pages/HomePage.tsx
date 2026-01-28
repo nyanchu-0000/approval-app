@@ -318,28 +318,31 @@ export const HomePage: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '24px',
               flexShrink: 0
             }}>
-              💡
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="32" height="32">
+                {/* トロフィーのカップ部分 */}
+                <path d="M40 30 L40 50 Q40 70 64 70 Q88 70 88 50 L88 30 Z" fill="#B8D4E8"/>
+                {/* トロフィーの持ち手 */}
+                <path d="M30 30 Q20 30 20 40 Q20 48 30 50 L30 30" fill="#B8D4E8"/>
+                <path d="M98 30 Q108 30 108 40 Q108 48 98 50 L98 30" fill="#B8D4E8"/>
+                {/* トロフィーの台座 */}
+                <rect x="56" y="70" width="16" height="20" fill="#B8D4E8"/>
+                <rect x="48" y="90" width="32" height="8" rx="2" fill="#B8D4E8"/>
+                {/* 順位表示 (1位のリボン) */}
+                <circle cx="64" cy="50" r="12" fill="#ffffff"/>
+                <text x="64" y="55" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#B8D4E8">1</text>
+              </svg>
             </div>
             <div style={{ flex: 1 }}>
               <h3 style={{
-                margin: '0 0 4px 0',
+                margin: 0,
                 fontSize: '14px',
                 fontWeight: 'bold',
                 color: 'white'
               }}>
-                友達と思い出をシェアしよう
+                ランクとアイテムを見る
               </h3>
-              <p style={{
-                margin: 0,
-                fontSize: '12px',
-                color: 'rgba(255,255,255,0.9)',
-                lineHeight: '1.4'
-              }}>
-                承認されると投稿が公開されます
-              </p>
             </div>
           </div>
         </div>
