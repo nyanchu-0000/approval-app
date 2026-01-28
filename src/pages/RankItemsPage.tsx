@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Header } from '../components/common/Header';
 import { Footer } from '../components/common/Footer';
+import { ItemIcon } from '../components/common/ItemIcon';
 import type { User } from '../types/user';
+import { updateItemsForRank, getItemAtPosition, type PlacedItem } from '../utils/itemPlacement';
 
 export const RankItemsPage: React.FC = () => {
   const [postCount, setPostCount] = useState(0);
   const [rank, setRank] = useState(0);
+  const [placements, setPlacements] = useState<PlacedItem[]>([]);
 
   useEffect(() => {
     loadUserData();
@@ -29,6 +32,10 @@ export const RankItemsPage: React.FC = () => {
       // ランクを計算（5投稿ごとに1ランクアップ）
       const calculatedRank = Math.floor(count / 5);
       setRank(calculatedRank);
+      
+      // アイテムの配置を更新
+      const updatedPlacements = updateItemsForRank(userData.uid, calculatedRank);
+      setPlacements(updatedPlacements);
     }
   };
 
@@ -39,20 +46,39 @@ export const RankItemsPage: React.FC = () => {
     const items = [];
 
     for (let i = 0; i < rows * cols; i++) {
+      const item = getItemAtPosition(placements, i);
+      const hasItem = !!item;
+      
       items.push(
         <div
           key={i}
           style={{
             aspectRatio: '1',
-            backgroundColor: 'rgba(255, 255, 255, 0.3)',
+            backgroundColor: hasItem ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.2)',
             borderRadius: '12px',
-            border: '2px dashed rgba(255, 255, 255, 0.5)',
+            border: hasItem 
+              ? '2px solid rgba(255, 255, 255, 0.8)' 
+              : '2px dashed rgba(255, 255, 255, 0.4)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            transition: 'all 0.3s ease',
+            position: 'relative',
+            overflow: 'hidden'
           }}
         >
-          {/* アイテムがここに表示される予定 */}
+          {item && (
+            <div style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              animation: 'fadeIn 0.5s ease'
+            }}>
+              <ItemIcon item={item} size={45} />
+            </div>
+          )}
         </div>
       );
     }
@@ -61,14 +87,29 @@ export const RankItemsPage: React.FC = () => {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#D4E7F5',
-      paddingTop: '60px',
-      paddingBottom: '70px',
-      position: 'relative'
-    }}>
-      <Header title="アイテム一覧" />
+    <>
+      <style>
+        {`
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: scale(0.8);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1);
+            }
+          }
+        `}
+      </style>
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#D4E7F5',
+        paddingTop: '60px',
+        paddingBottom: '70px',
+        position: 'relative'
+      }}>
+        <Header title="アイテム一覧" />
 
       <div style={{
         padding: '20px',
@@ -129,9 +170,20 @@ export const RankItemsPage: React.FC = () => {
           <div style={{
             fontSize: '14px',
             color: '#666',
-            textAlign: 'center'
+            textAlign: 'center',
+            marginBottom: '8px'
           }}>
             投稿数: {postCount}
+          </div>
+          
+          {/* 獲得アイテム数表示 */}
+          <div style={{
+            fontSize: '13px',
+            color: '#4A90B8',
+            textAlign: 'center',
+            fontWeight: 'bold'
+          }}>
+            獲得アイテム: {placements.length} / 150
           </div>
         </div>
 
@@ -148,8 +200,9 @@ export const RankItemsPage: React.FC = () => {
         </div>
       </div>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </>
   );
 };
 
