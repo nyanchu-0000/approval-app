@@ -1,56 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/common/Header';
 import { Footer } from '../components/common/Footer';
-import type { User } from '../types/user';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // 初回起動時にユーザーを作成
-    initializeUser();
-  }, []);
-
-  const initializeUser = () => {
-    const existingUser = localStorage.getItem('currentUser');
-    
-    if (!existingUser) {
-      // 新規ユーザーを作成
-      const newUser: User = {
-        uid: generateUserId(),
-        username: 'ユーザー',
-        email: 'user@example.com',
-        profileIcon: '/dummy-app-icon.svg',
-        profileIconUrl: undefined,
-        bio: '',
-        friendId: null,
-        friendRequestTo: null,
-        friendRequestFrom: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      localStorage.setItem('currentUser', JSON.stringify(newUser));
-
-      // allUsersにも追加
-      const allUsersStr = localStorage.getItem('allUsers');
-      const allUsers: User[] = allUsersStr ? JSON.parse(allUsersStr) : [];
-      allUsers.push(newUser);
-      localStorage.setItem('allUsers', JSON.stringify(allUsers));
-    }
-  };
-
-  const generateUserId = (): string => {
-    // ランダムな8文字のIDを生成
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 8; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    // 空の場合はデフォルトIDを返す
-    return result || 'A1B2C3D4';
-  };
 
   return (
     <div style={{

@@ -4,6 +4,8 @@ import { Header } from '../components/common/Header';
 import { Footer } from '../components/common/Footer';
 import { ImageUpload } from '../components/post/ImageUpload';
 import { Button } from '../components/common/Button';
+import { authService } from '../services/authService';
+import { postService } from '../services/postService';
 import { User } from '../types/user';
 
 export const CreatePostPage: React.FC = () => {
@@ -11,104 +13,84 @@ export const CreatePostPage: React.FC = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [image, setImage] = useState<File | null>(null);
-  const [imageBase64, setImageBase64] = useState<string | undefined>(undefined);
-  const [showNotification, setShowNotification] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | undefined>(undefined);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // 現在のユーザー情報を取得
-    const userDataStr = localStorage.getItem('currentUser');
-    if (userDataStr) {
-      const userData = JSON.parse(userDataStr);
-      setCurrentUser(userData);
-    }
+    loadUserData();
   }, []);
+
+  const loadUserData = async () => {
+    try {
+      const userData = await authService.getCurrentUser();
+      setCurrentUser(userData);
+      
+      // フレンドがいない場合は警告
+      if (userData && !userData.friendId) {
+        alert('投稿するにはまずフレンドを追加してください');
+        navigate('/profile');
+      }
+    } catch (error) {
+      console.error('ユーザー情報の取得に失敗:', error);
+    }
+  };
 
   const handleImageSelect = (file: File) => {
     setImage(file);
     
-    // 画像をBase64に変換
+    // プレビュー用にBase64に変換
     const reader = new FileReader();
     reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        // Canvasで画像をリサイズ（最大サイズ: 800x800）
-        const canvas = document.createElement('canvas');
-        const maxSize = 800;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > maxSize) {
-            height *= maxSize / width;
-            width = maxSize;
-          }
-        } else {
-          if (height > maxSize) {
-            width *= maxSize / height;
-            height = maxSize;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-
-        // Base64に変換（画質を0.7に設定してサイズを削減）
-        const base64String = canvas.toDataURL('image/jpeg', 0.7);
-        setImageBase64(base64String);
-      };
-      img.src = e.target?.result as string;
+      setImagePreview(e.target?.result as string);
     };
     reader.readAsDataURL(file);
   };
 
   const handleSubmit = async () => {
-    if (!currentUser) {
-      alert('ユーザー情報が見つかりません');
+    if (!currentUser || !currentUser.friendId) {
+      alert('フレンドが登録されていません');
       return;
     }
 
-    // TODO: Firebase に保存する処理
-    const newPost = {
-      id: Date.now().toString(),
-      userId: currentUser.uid,
-      username: currentUser.username,
-      userProfileIcon: currentUser.profileIcon,
-      title,
-      content,
-      imageUrl: imageBase64, // Base64形式の画像データ
-      targetFriendId: currentUser.friendId || '',
-      approvals: [],
-      createdAt: new Date().toISOString(), // ISO文字列として保存
-      updatedAt: new Date().toISOString()
-    };
-    
-    // localStorageに保存（仮実装）
-    const existingPosts = localStorage.getItem('posts');
-    const posts = existingPosts ? JSON.parse(existingPosts) : [];
-    posts.unshift(newPost);
-    
-    try {
-      localStorage.setItem('posts', JSON.stringify(posts));
-      console.log('投稿を保存しました:', newPost);
-    } catch (error) {
-      console.error('localStorageへの保存に失敗しました:', error);
-      alert('投稿の保存に失敗しました。画像サイズが大きすぎる可能性があります。');
+    if (!title.trim() || !content.trim()) {
+      alert('タイトルと内容を入力してください');
       return;
     }
-    
-    // 通知を表示
-    setShowNotification(true);
-    
-    // 1.5秒後に投稿一覧に遷移
-    setTimeout(() => {
-      navigate('/posts');
-    }, 1500);
+
+    setLoading(true);
+
+    try {
+      await postService.createPost(currentUser.uid, {
+        title: title.trim(),
+        content: content.trim(),
+        image,
+        targetFriendId: currentUser.friendId,
+      });
+
+      // 成功画面へ遷移
+      navigate('/post-success');
+    } catch (error: any) {
+      console.error('投稿の作成に失敗:', error);
+      alert(error.message || '投稿の作成に失敗しました');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const canSubmit = title.trim() !== '' && content.trim() !== '';
+  if (!currentUser) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#D4E7F5',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <p>読み込み中...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -117,118 +99,120 @@ export const CreatePostPage: React.FC = () => {
       paddingTop: '60px',
       paddingBottom: '70px'
     }}>
-      <Header title="投稿する" />
-      
-      <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '8px', 
-            fontWeight: 'bold',
-            color: '#333'
-          }}>
-            タイトル
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="タイトルを入力..."
-            style={{
-              width: '100%',
-              padding: '12px',
-              borderRadius: '8px',
-              border: '1px solid #ddd',
-              fontSize: '16px',
-              boxSizing: 'border-box'
-            }}
-          />
-        </div>
+      <Header title="投稿作成" />
 
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '8px', 
-            fontWeight: 'bold',
-            color: '#333'
-          }}>
-            画像
-          </label>
-          <ImageUpload onImageSelect={handleImageSelect} />
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '8px', 
-            fontWeight: 'bold',
-            color: '#333'
-          }}>
-            本文
-          </label>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="本文を入力..."
-            rows={6}
-            style={{
-              width: '100%',
-              padding: '12px',
-              borderRadius: '8px',
-              border: '1px solid #ddd',
-              fontSize: '16px',
-              resize: 'vertical',
-              boxSizing: 'border-box',
-              fontFamily: 'inherit'
-            }}
-          />
-        </div>
-
-        <Button
-          onClick={handleSubmit}
-          fullWidth
-          disabled={!canSubmit}
-        >
-          投稿
-        </Button>
-      </div>
-
-      {/* プッシュアップ通知 */}
-      {showNotification && (
+      <div style={{
+        padding: '20px',
+        maxWidth: '500px',
+        margin: '0 auto'
+      }}>
         <div style={{
-          position: 'fixed',
-          top: '80px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: '#4a9d8f',
-          color: 'white',
-          padding: '16px 32px',
-          borderRadius: '12px',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-          zIndex: 2000,
-          animation: 'slideDown 0.3s ease-out',
-          fontSize: '16px',
-          fontWeight: 'bold'
+          backgroundColor: 'white',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
         }}>
-          ✓ 投稿されました
-        </div>
-      )}
+          {/* タイトル入力 */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              marginBottom: '8px',
+              color: '#333'
+            }}>
+              タイトル
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="投稿のタイトルを入力"
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid #ddd',
+                fontSize: '16px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
 
-      <style>{`
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-          }
-        }
-      `}</style>
+          {/* 画像アップロード */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              marginBottom: '8px',
+              color: '#333'
+            }}>
+              画像
+            </label>
+            <ImageUpload onImageSelect={handleImageSelect} disabled={loading} />
+            {imagePreview && (
+              <div style={{
+                marginTop: '12px',
+                borderRadius: '8px',
+                overflow: 'hidden'
+              }}>
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    display: 'block'
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* 内容入力 */}
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              marginBottom: '8px',
+              color: '#333'
+            }}>
+              内容
+            </label>
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="投稿の内容を入力してください"
+              rows={6}
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid #ddd',
+                fontSize: '16px',
+                resize: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* 投稿ボタン */}
+          <Button
+            onClick={handleSubmit}
+            disabled={loading || !title.trim() || !content.trim()}
+            variant="primary"
+            style={{ width: '100%' }}
+          >
+            {loading ? '投稿中...' : '投稿する'}
+          </Button>
+        </div>
+      </div>
 
       <Footer />
     </div>
   );
 };
-

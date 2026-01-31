@@ -1,17 +1,6 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 
 export const LoadingPage: React.FC = () => {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // 2秒後にホーム画面に遷移
-    const timer = setTimeout(() => {
-      navigate('/');
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [navigate]);
 
   return (
     <div style={{

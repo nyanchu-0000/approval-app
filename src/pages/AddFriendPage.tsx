@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/common/Header';
 import { Footer } from '../components/common/Footer';
 import { Button } from '../components/common/Button';
+import { authService } from '../services/authService';
+import { userService } from '../services/userService';
 import { User } from '../types/user';
 
 export const AddFriendPage: React.FC = () => {
@@ -11,147 +13,133 @@ export const AddFriendPage: React.FC = () => {
   const [friendUserId, setFriendUserId] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // 現在のユーザー情報を取得
-    const userDataStr = localStorage.getItem('currentUser');
-    if (userDataStr) {
-      const userData = JSON.parse(userDataStr);
-      setCurrentUser(userData);
-    }
+    loadUserData();
   }, []);
 
-  const handleAddFriend = () => {
+  const loadUserData = async () => {
+    try {
+      const userData = await authService.getCurrentUser();
+      setCurrentUser(userData);
+    } catch (error) {
+      console.error('ユーザー情報の取得に失敗:', error);
+    }
+  };
+
+  const handleAddFriend = async () => {
     setError('');
     setSuccess('');
+    setLoading(true);
 
-    if (!friendUserId.trim()) {
-      setError('フレンドIDを入力してください');
-      return;
-    }
-
-    if (!currentUser) {
-      setError('ユーザー情報が見つかりません');
-      return;
-    }
-
-    if (friendUserId === currentUser.uid) {
-      setError('自分自身を追加することはできません');
-      return;
-    }
-
-    // すでにフレンドがいる場合
-    if (currentUser.friendId) {
-      setError('すでにフレンドが登録されています');
-      return;
-    }
-
-    // フレンドリクエストを送信（localStorage版）
-    const allUsersStr = localStorage.getItem('allUsers');
-    const allUsers: User[] = allUsersStr ? JSON.parse(allUsersStr) : [];
-    
-    // 相手のユーザーを検索
-    const friendUser = allUsers.find(u => u.uid === friendUserId);
-    
-    if (!friendUser) {
-      setError('指定されたIDのユーザーが見つかりません');
-      return;
-    }
-
-    // 相手がすでに他のフレンドを持っている場合
-    if (friendUser.friendId && friendUser.friendId !== currentUser.uid) {
-      setError('このユーザーはすでに別のフレンドと繋がっています');
-      return;
-    }
-
-    // 相手から自分にリクエストが来ている → フレンド成立
-    if (friendUser.friendRequestTo === currentUser.uid) {
-      // 両者のフレンド関係を確立
-      const updatedUsers = allUsers.map(u => {
-        if (u.uid === currentUser.uid) {
-          return { 
-            ...u, 
-            friendId: friendUserId,
-            friendRequestTo: null,
-            friendRequestFrom: null
-          };
-        }
-        if (u.uid === friendUserId) {
-          return { 
-            ...u, 
-            friendId: currentUser.uid,
-            friendRequestTo: null,
-            friendRequestFrom: null
-          };
-        }
-        return u;
-      });
-
-      localStorage.setItem('allUsers', JSON.stringify(updatedUsers));
-      
-      // 現在のユーザー情報を更新
-      const updatedCurrentUser = updatedUsers.find(u => u.uid === currentUser.uid);
-      if (updatedCurrentUser) {
-        localStorage.setItem('currentUser', JSON.stringify(updatedCurrentUser));
-        setCurrentUser(updatedCurrentUser);
+    try {
+      if (!friendUserId.trim()) {
+        setError('フレンドIDを入力してください');
+        return;
       }
 
-      setSuccess('フレンドが追加されました！');
+      if (!currentUser) {
+        setError('ユーザー情報が見つかりません');
+        return;
+      }
+
+      if (friendUserId === currentUser.uid) {
+        setError('自分自身を追加することはできません');
+        return;
+      }
+
+      // すでにフレンドがいる場合
+      if (currentUser.friendId) {
+        setError('すでにフレンドが登録されています');
+        return;
+      }
+
+      // 相手のユーザーを検索
+      const friendUser = await userService.getUserById(friendUserId);
+      
+      if (!friendUser) {
+        setError('指定されたIDのユーザーが見つかりません');
+        return;
+      }
+
+      // 相手がすでに他のフレンドを持っている場合
+      if (friendUser.friendId && friendUser.friendId !== currentUser.uid) {
+        setError('このユーザーはすでに別のフレンドと繋がっています');
+        return;
+      }
+
+      // 相手から自分にリクエストが来ている → フレンド成立
+      if (friendUser.friendRequestTo === currentUser.uid) {
+        await userService.acceptFriendRequest(currentUser.uid, friendUserId);
+        setSuccess('フレンドが追加されました！');
+        setTimeout(() => {
+          navigate('/profile');
+        }, 1500);
+      } else {
+        // 新規リクエストを送信
+        await userService.sendFriendRequest(currentUser.uid, friendUserId);
+        setSuccess('フレンドリクエストを送信しました！');
+        setTimeout(() => {
+          navigate('/profile');
+        }, 1500);
+      }
+    } catch (error: any) {
+      console.error('フレンド追加に失敗:', error);
+      setError(error.message || 'フレンド追加に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelRequest = async () => {
+    if (!currentUser || !currentUser.friendRequestTo) return;
+
+    try {
+      setLoading(true);
+      await userService.cancelFriendRequest(currentUser.uid, currentUser.friendRequestTo);
+      await loadUserData();
+      setSuccess('リクエストをキャンセルしました');
+    } catch (error) {
+      console.error('リクエストのキャンセルに失敗:', error);
+      setError('リクエストのキャンセルに失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAcceptRequest = async () => {
+    if (!currentUser || !currentUser.friendRequestFrom) return;
+
+    try {
+      setLoading(true);
+      await userService.acceptFriendRequest(currentUser.uid, currentUser.friendRequestFrom);
+      setSuccess('フレンドリクエストを承認しました！');
       setTimeout(() => {
         navigate('/profile');
       }, 1500);
-      return;
+    } catch (error) {
+      console.error('リクエストの承認に失敗:', error);
+      setError('リクエストの承認に失敗しました');
+    } finally {
+      setLoading(false);
     }
-
-    // 自分からリクエストを送る
-    const updatedUsers = allUsers.map(u => {
-      if (u.uid === currentUser.uid) {
-        return { ...u, friendRequestTo: friendUserId };
-      }
-      if (u.uid === friendUserId) {
-        return { ...u, friendRequestFrom: currentUser.uid };
-      }
-      return u;
-    });
-
-    localStorage.setItem('allUsers', JSON.stringify(updatedUsers));
-    
-    // 現在のユーザー情報を更新
-    const updatedCurrentUser = updatedUsers.find(u => u.uid === currentUser.uid);
-    if (updatedCurrentUser) {
-      localStorage.setItem('currentUser', JSON.stringify(updatedCurrentUser));
-      setCurrentUser(updatedCurrentUser);
-    }
-
-    setSuccess('フレンドリクエストを送信しました。相手も追加するとフレンドになります。');
   };
 
-  const handleCancelRequest = () => {
-    if (!currentUser || !currentUser.friendRequestTo) return;
+  const handleRejectRequest = async () => {
+    if (!currentUser || !currentUser.friendRequestFrom) return;
 
-    const allUsersStr = localStorage.getItem('allUsers');
-    const allUsers: User[] = allUsersStr ? JSON.parse(allUsersStr) : [];
-
-    // リクエストをキャンセル
-    const updatedUsers = allUsers.map(u => {
-      if (u.uid === currentUser.uid) {
-        return { ...u, friendRequestTo: null };
-      }
-      if (u.uid === currentUser.friendRequestTo) {
-        return { ...u, friendRequestFrom: null };
-      }
-      return u;
-    });
-
-    localStorage.setItem('allUsers', JSON.stringify(updatedUsers));
-    
-    const updatedCurrentUser = updatedUsers.find(u => u.uid === currentUser.uid);
-    if (updatedCurrentUser) {
-      localStorage.setItem('currentUser', JSON.stringify(updatedCurrentUser));
-      setCurrentUser(updatedCurrentUser);
+    try {
+      setLoading(true);
+      await userService.cancelFriendRequest(currentUser.uid, currentUser.friendRequestFrom);
+      await loadUserData();
+      setSuccess('リクエストを拒否しました');
+    } catch (error) {
+      console.error('リクエストの拒否に失敗:', error);
+      setError('リクエストの拒否に失敗しました');
+    } finally {
+      setLoading(false);
     }
-
-    setSuccess('リクエストをキャンセルしました');
   };
 
   return (
@@ -161,56 +149,169 @@ export const AddFriendPage: React.FC = () => {
       paddingTop: '60px',
       paddingBottom: '70px'
     }}>
-      <Header title="フレンドを追加" />
-      
-      <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-        {/* あなたのID */}
+      <Header title="フレンド追加" />
+
+      <div style={{
+        padding: '20px',
+        maxWidth: '500px',
+        margin: '0 auto'
+      }}>
+        {/* リクエスト受信通知 */}
+        {currentUser?.friendRequestFrom && (
+          <div style={{
+            backgroundColor: '#fff3cd',
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '20px',
+            border: '1px solid #ffc107'
+          }}>
+            <p style={{
+              fontSize: '14px',
+              fontWeight: 'bold',
+              color: '#856404',
+              marginBottom: '12px'
+            }}>
+              フレンドリクエストが届いています
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: '8px'
+            }}>
+              <Button
+                onClick={handleAcceptRequest}
+                disabled={loading}
+                variant="primary"
+                style={{ flex: 1, fontSize: '14px' }}
+              >
+                承認
+              </Button>
+              <Button
+                onClick={handleRejectRequest}
+                disabled={loading}
+                variant="secondary"
+                style={{ flex: 1, fontSize: '14px' }}
+              >
+                拒否
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* リクエスト送信済み通知 */}
+        {currentUser?.friendRequestTo && (
+          <div style={{
+            backgroundColor: '#d1ecf1',
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '20px',
+            border: '1px solid #bee5eb'
+          }}>
+            <p style={{
+              fontSize: '14px',
+              fontWeight: 'bold',
+              color: '#0c5460',
+              marginBottom: '12px'
+            }}>
+              フレンドリクエスト送信済み
+            </p>
+            <Button
+              onClick={handleCancelRequest}
+              disabled={loading}
+              variant="secondary"
+              style={{ width: '100%', fontSize: '14px' }}
+            >
+              リクエストをキャンセル
+            </Button>
+          </div>
+        )}
+
+        {/* フレンド追加フォーム */}
         <div style={{
           backgroundColor: 'white',
           borderRadius: '16px',
-          padding: '20px',
-          marginBottom: '20px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          padding: '24px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
         }}>
-          <h3 style={{
-            fontSize: '16px',
+          <h2 style={{
+            fontSize: '20px',
             fontWeight: 'bold',
             color: '#333',
-            marginBottom: '12px'
+            marginBottom: '16px'
           }}>
-            あなたのID
-          </h3>
-          <div style={{
-            backgroundColor: '#f0f4f8',
-            padding: '16px',
-            borderRadius: '8px',
-            fontFamily: 'monospace',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: '#4a9d8f',
-            textAlign: 'center',
-            letterSpacing: '1px'
-          }}>
-            {currentUser?.uid || 'loading...'}
-          </div>
+            フレンドIDを入力
+          </h2>
+
           <p style={{
-            fontSize: '12px',
+            fontSize: '14px',
             color: '#666',
-            marginTop: '8px',
-            textAlign: 'center'
+            marginBottom: '16px',
+            lineHeight: '1.6'
           }}>
-            このIDを相手に教えてください
+            フレンドのユーザーIDを入力してください。相手もあなたのIDを入力すると、フレンドとして繋がります。
           </p>
+
+          <input
+            type="text"
+            value={friendUserId}
+            onChange={(e) => setFriendUserId(e.target.value)}
+            placeholder="ユーザーIDを入力"
+            disabled={loading || !!currentUser?.friendRequestTo}
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid #ddd',
+              fontSize: '16px',
+              marginBottom: '16px',
+              fontFamily: 'monospace',
+              boxSizing: 'border-box'
+            }}
+          />
+
+          {error && (
+            <div style={{
+              padding: '12px',
+              backgroundColor: '#fee',
+              borderRadius: '8px',
+              marginBottom: '16px',
+              fontSize: '14px',
+              color: '#c33'
+            }}>
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div style={{
+              padding: '12px',
+              backgroundColor: '#d4edda',
+              borderRadius: '8px',
+              marginBottom: '16px',
+              fontSize: '14px',
+              color: '#155724'
+            }}>
+              {success}
+            </div>
+          )}
+
+          <Button
+            onClick={handleAddFriend}
+            disabled={loading || !!currentUser?.friendRequestTo}
+            variant="primary"
+            style={{ width: '100%' }}
+          >
+            {loading ? '処理中...' : 'フレンドを追加'}
+          </Button>
         </div>
 
-        {/* フレンド追加フォーム */}
-        {!currentUser?.friendId && !currentUser?.friendRequestTo && (
+        {/* あなたのID表示 */}
+        {currentUser && (
           <div style={{
             backgroundColor: 'white',
             borderRadius: '16px',
-            padding: '20px',
-            marginBottom: '20px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            padding: '24px',
+            marginTop: '20px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
           }}>
             <h3 style={{
               fontSize: '16px',
@@ -218,157 +319,31 @@ export const AddFriendPage: React.FC = () => {
               color: '#333',
               marginBottom: '12px'
             }}>
-              フレンドのIDを入力
+              あなたのID
             </h3>
-            <input
-              type="text"
-              value={friendUserId}
-              onChange={(e) => setFriendUserId(e.target.value)}
-              placeholder="フレンドのIDを入力"
-              style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: '16px',
-                border: '2px solid #e0e0e0',
-                borderRadius: '8px',
-                marginBottom: '12px',
-                boxSizing: 'border-box',
-                fontFamily: 'monospace'
-              }}
-            />
-            <Button onClick={handleAddFriend} fullWidth>
-              フレンドを追加
-            </Button>
-          </div>
-        )}
-
-        {/* リクエスト送信済み */}
-        {currentUser?.friendRequestTo && (
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            padding: '20px',
-            marginBottom: '20px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-              <div style={{ fontSize: '48px', marginBottom: '12px' }}>⏳</div>
-              <h3 style={{
-                fontSize: '16px',
-                fontWeight: 'bold',
-                color: '#333',
-                marginBottom: '8px'
-              }}>
-                リクエスト送信済み
-              </h3>
-              <p style={{ fontSize: '14px', color: '#666' }}>
-                相手があなたのIDを追加するのを待っています
-              </p>
-            </div>
-            <Button variant="outline" onClick={handleCancelRequest} fullWidth>
-              リクエストをキャンセル
-            </Button>
-          </div>
-        )}
-
-        {/* フレンド受信リクエスト */}
-        {currentUser?.friendRequestFrom && !currentUser?.friendId && (
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            padding: '20px',
-            marginBottom: '20px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            border: '2px solid #4a9d8f'
-          }}>
-            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-              <div style={{ fontSize: '48px', marginBottom: '12px' }}>🔔</div>
-              <h3 style={{
-                fontSize: '16px',
-                fontWeight: 'bold',
-                color: '#333',
-                marginBottom: '8px'
-              }}>
-                フレンドリクエストが届いています
-              </h3>
-              <p style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>
-                相手のIDを入力してフレンドになりましょう
-              </p>
-              <div style={{
-                backgroundColor: '#f0f4f8',
-                padding: '12px',
-                borderRadius: '8px',
-                fontFamily: 'monospace',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                color: '#4a9d8f'
-              }}>
-                {currentUser.friendRequestFrom}
-              </div>
+            <p style={{
+              fontSize: '14px',
+              color: '#666',
+              marginBottom: '12px'
+            }}>
+              このIDを相手に伝えてください
+            </p>
+            <div style={{
+              backgroundColor: '#f5f5f5',
+              borderRadius: '8px',
+              padding: '12px',
+              fontFamily: 'monospace',
+              fontSize: '14px',
+              color: '#333',
+              wordBreak: 'break-all'
+            }}>
+              {currentUser.uid}
             </div>
           </div>
         )}
-
-        {/* エラーメッセージ */}
-        {error && (
-          <div style={{
-            backgroundColor: '#ffebee',
-            color: '#c62828',
-            padding: '16px',
-            borderRadius: '8px',
-            marginBottom: '20px',
-            fontSize: '14px'
-          }}>
-            {error}
-          </div>
-        )}
-
-        {/* 成功メッセージ */}
-        {success && (
-          <div style={{
-            backgroundColor: '#e8f5e9',
-            color: '#2e7d32',
-            padding: '16px',
-            borderRadius: '8px',
-            marginBottom: '20px',
-            fontSize: '14px'
-          }}>
-            {success}
-          </div>
-        )}
-
-        {/* 説明 */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '16px',
-          padding: '20px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h3 style={{
-            fontSize: '16px',
-            fontWeight: 'bold',
-            color: '#333',
-            marginBottom: '12px'
-          }}>
-            フレンド追加の流れ
-          </h3>
-          <ol style={{
-            fontSize: '14px',
-            color: '#666',
-            paddingLeft: '20px',
-            lineHeight: '1.8'
-          }}>
-            <li>あなたのIDを相手に教えます</li>
-            <li>相手のIDを入力して追加します</li>
-            <li>お互いが追加すると自動的にフレンドになります</li>
-            <li>フレンドは1人だけ登録できます</li>
-          </ol>
-        </div>
       </div>
 
       <Footer />
     </div>
   );
 };
-
-

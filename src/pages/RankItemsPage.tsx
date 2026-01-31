@@ -2,40 +2,52 @@ import React, { useEffect, useState } from 'react';
 import { Header } from '../components/common/Header';
 import { Footer } from '../components/common/Footer';
 import { ItemIcon } from '../components/common/ItemIcon';
-import type { User } from '../types/user';
+import { authService } from '../services/authService';
+import { postService } from '../services/postService';
+import { itemService } from '../services/itemService';
 import { updateItemsForRank, getItemAtPosition, type PlacedItem } from '../utils/itemPlacement';
 
 export const RankItemsPage: React.FC = () => {
   const [postCount, setPostCount] = useState(0);
   const [rank, setRank] = useState(0);
   const [placements, setPlacements] = useState<PlacedItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadUserData();
   }, []);
 
-  const loadUserData = () => {
-    // 現在のユーザー情報を取得
-    const userDataStr = localStorage.getItem('currentUser');
-    if (!userDataStr) return;
-    const userData: User = JSON.parse(userDataStr);
+  const loadUserData = async () => {
+    try {
+      const currentUser = await authService.getCurrentUser();
+      if (!currentUser) return;
 
-    // localStorageから投稿を読み込んで投稿数をカウント
-    const existingPosts = localStorage.getItem('posts');
-    if (existingPosts) {
-      const parsedPosts = JSON.parse(existingPosts);
-      // 現在のユーザーの投稿のみをカウント
-      const userPosts = parsedPosts.filter((post: any) => post.userId === userData.uid);
-      const count = userPosts.length;
+      // 投稿を取得して投稿数をカウント
+      const posts = await postService.getMyPosts(currentUser.uid);
+      const count = posts.length;
       setPostCount(count);
       
       // ランクを計算（5投稿ごとに1ランクアップ）
       const calculatedRank = Math.floor(count / 5);
       setRank(calculatedRank);
       
-      // アイテムの配置を更新
-      const updatedPlacements = updateItemsForRank(userData.uid, calculatedRank);
-      setPlacements(updatedPlacements);
+      // Supabaseからアイテム配置を取得
+      const savedPlacements = await itemService.getItemPlacements(currentUser.uid);
+      
+      // 新しいアイテムを計算
+      const updatedPlacements = updateItemsForRank(currentUser.uid, calculatedRank);
+      
+      // 既存のアイテムと比較して、新しいアイテムがあれば保存
+      if (updatedPlacements.length > savedPlacements.length) {
+        await itemService.saveItemPlacements(currentUser.uid, updatedPlacements);
+        setPlacements(updatedPlacements);
+      } else {
+        setPlacements(savedPlacements.length > 0 ? savedPlacements : updatedPlacements);
+      }
+    } catch (error) {
+      console.error('データの読み込みに失敗:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -111,11 +123,21 @@ export const RankItemsPage: React.FC = () => {
       }}>
         <Header title="アイテム一覧" />
 
-      <div style={{
-        padding: '20px',
-        maxWidth: '500px',
-        margin: '0 auto'
-      }}>
+      {loading ? (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 'calc(100vh - 130px)'
+        }}>
+          <p style={{ color: '#666' }}>読み込み中...</p>
+        </div>
+      ) : (
+        <div style={{
+          padding: '20px',
+          maxWidth: '500px',
+          margin: '0 auto'
+        }}>
 
         {/* ランク表示エリア */}
         <div style={{
@@ -198,7 +220,8 @@ export const RankItemsPage: React.FC = () => {
         }}>
           {renderItemGrid()}
         </div>
-      </div>
+        </div>
+      )}
 
         <Footer />
       </div>

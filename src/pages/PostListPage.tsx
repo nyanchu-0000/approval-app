@@ -2,73 +2,51 @@ import React, { useState, useEffect } from 'react';
 import { Header } from '../components/common/Header';
 import { Footer } from '../components/common/Footer';
 import { PostCard } from '../components/post/PostCard';
+import { authService } from '../services/authService';
+import { postService } from '../services/postService';
 import { Post } from '../types';
 import { User } from '../types/user';
 
 export const PostListPage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadPosts();
   }, []);
 
-  const loadPosts = () => {
-    // 現在のユーザー情報を取得
-    const userDataStr = localStorage.getItem('currentUser');
-    if (!userDataStr) return;
+  const loadPosts = async () => {
+    try {
+      const userData = await authService.getCurrentUser();
+      if (!userData) return;
 
-    const userData: User = JSON.parse(userDataStr);
-    setCurrentUser(userData);
+      setCurrentUser(userData);
 
-    // localStorageから投稿を読み込む
-    const existingPosts = localStorage.getItem('posts');
-    if (existingPosts) {
-      const parsedPosts = JSON.parse(existingPosts);
-      console.log('全投稿数:', parsedPosts.length);
-      
-      // 現在のユーザーの投稿のみをフィルタリング
-      const userPosts = parsedPosts
-        .filter((post: any) => post.userId === userData.uid)
-        .map((post: any) => {
-          console.log('投稿ID:', post.id, 'imageUrl存在:', !!post.imageUrl, 'imageUrl長さ:', post.imageUrl?.length);
-          return {
-            id: post.id,
-            userId: post.userId,
-            username: userData.username, // プロフィールから最新の情報を取得
-            userProfileIcon: userData.profileIcon, // プロフィールから最新の情報を取得
-            title: post.title,
-            content: post.content,
-            imageUrl: post.imageUrl, // 画像URLを保持
-            targetFriendId: post.targetFriendId,
-            createdAt: new Date(post.createdAt),
-            updatedAt: new Date(post.updatedAt),
-            approvals: post.approvals.map((approval: any) => ({
-              ...approval,
-              timestamp: new Date(approval.timestamp)
-            }))
-          };
-        });
-      console.log('ユーザーの投稿数:', userPosts.length);
+      // 自分の投稿を取得
+      const userPosts = await postService.getMyPosts(userData.uid);
       setPosts(userPosts);
+    } catch (error) {
+      console.error('投稿の読み込みに失敗:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeletePost = (postId: string) => {
-    // localStorageから全投稿を取得
-    const existingPosts = localStorage.getItem('posts');
-    if (!existingPosts) return;
+  const handleDeletePost = async (postId: string) => {
+    if (!currentUser) return;
 
-    const parsedPosts = JSON.parse(existingPosts);
-    // 削除する投稿以外をフィルタリング
-    const updatedPosts = parsedPosts.filter((post: any) => post.id !== postId);
-    
-    // localStorageを更新
-    localStorage.setItem('posts', JSON.stringify(updatedPosts));
-    
-    // 画面を再読み込み
-    loadPosts();
+    if (window.confirm('この投稿を削除しますか？')) {
+      try {
+        await postService.deletePost(postId, currentUser.uid);
+        await loadPosts();
+      } catch (error) {
+        console.error('投稿の削除に失敗:', error);
+        alert('投稿の削除に失敗しました');
+      }
+    }
   };
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -77,30 +55,58 @@ export const PostListPage: React.FC = () => {
       paddingBottom: '70px'
     }}>
       <Header title="投稿一覧" />
-      
-      <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-        {posts.length === 0 ? (
+
+      <div style={{
+        padding: '20px',
+        maxWidth: '500px',
+        margin: '0 auto'
+      }}>
+        {loading ? (
           <div style={{
-            textAlign: 'center',
-            padding: '60px 20px',
-            color: '#999'
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '200px'
           }}>
-            <div style={{ fontSize: '64px', marginBottom: '20px' }}>📝</div>
-            <p>まだ投稿がありません</p>
+            <p style={{ color: '#666' }}>読み込み中...</p>
+          </div>
+        ) : posts.length === 0 ? (
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '40px 20px',
+            textAlign: 'center',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          }}>
+            <p style={{
+              fontSize: '16px',
+              color: '#666',
+              marginBottom: '8px'
+            }}>
+              まだ投稿がありません
+            </p>
+            <p style={{
+              fontSize: '14px',
+              color: '#999'
+            }}>
+              新しい投稿を作成してみましょう
+            </p>
           </div>
         ) : (
-          posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              showApprovalStatus
-              onClick={() => {
-                // TODO: 投稿詳細ページに遷移
-                console.log('Post clicked:', post.id);
-              }}
-              onDelete={() => handleDeletePost(post.id)}
-            />
-          ))
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onDelete={() => handleDeletePost(post.id)}
+                showDeleteButton={true}
+              />
+            ))}
+          </div>
         )}
       </div>
 
@@ -108,4 +114,3 @@ export const PostListPage: React.FC = () => {
     </div>
   );
 };
-
