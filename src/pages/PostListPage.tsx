@@ -1,0 +1,111 @@
+import React, { useState, useEffect } from 'react';
+import { Header } from '../components/common/Header';
+import { Footer } from '../components/common/Footer';
+import { PostCard } from '../components/post/PostCard';
+import { Post } from '../types';
+import { User } from '../types/user';
+
+export const PostListPage: React.FC = () => {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    loadPosts();
+  }, []);
+
+  const loadPosts = () => {
+    // 現在のユーザー情報を取得
+    const userDataStr = localStorage.getItem('currentUser');
+    if (!userDataStr) return;
+
+    const userData: User = JSON.parse(userDataStr);
+    setCurrentUser(userData);
+
+    // localStorageから投稿を読み込む
+    const existingPosts = localStorage.getItem('posts');
+    if (existingPosts) {
+      const parsedPosts = JSON.parse(existingPosts);
+      console.log('全投稿数:', parsedPosts.length);
+      
+      // 現在のユーザーの投稿のみをフィルタリング
+      const userPosts = parsedPosts
+        .filter((post: any) => post.userId === userData.uid)
+        .map((post: any) => {
+          console.log('投稿ID:', post.id, 'imageUrl存在:', !!post.imageUrl, 'imageUrl長さ:', post.imageUrl?.length);
+          return {
+            id: post.id,
+            userId: post.userId,
+            username: userData.username, // プロフィールから最新の情報を取得
+            userProfileIcon: userData.profileIcon, // プロフィールから最新の情報を取得
+            title: post.title,
+            content: post.content,
+            imageUrl: post.imageUrl, // 画像URLを保持
+            targetFriendId: post.targetFriendId,
+            createdAt: new Date(post.createdAt),
+            updatedAt: new Date(post.updatedAt),
+            approvals: post.approvals.map((approval: any) => ({
+              ...approval,
+              timestamp: new Date(approval.timestamp)
+            }))
+          };
+        });
+      console.log('ユーザーの投稿数:', userPosts.length);
+      setPosts(userPosts);
+    }
+  };
+
+  const handleDeletePost = (postId: string) => {
+    // localStorageから全投稿を取得
+    const existingPosts = localStorage.getItem('posts');
+    if (!existingPosts) return;
+
+    const parsedPosts = JSON.parse(existingPosts);
+    // 削除する投稿以外をフィルタリング
+    const updatedPosts = parsedPosts.filter((post: any) => post.id !== postId);
+    
+    // localStorageを更新
+    localStorage.setItem('posts', JSON.stringify(updatedPosts));
+    
+    // 画面を再読み込み
+    loadPosts();
+  };
+  return (
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#D4E7F5',
+      paddingTop: '60px',
+      paddingBottom: '70px'
+    }}>
+      <Header title="投稿一覧" />
+      
+      <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+        {posts.length === 0 ? (
+          <div style={{
+            textAlign: 'center',
+            padding: '60px 20px',
+            color: '#999'
+          }}>
+            <div style={{ fontSize: '64px', marginBottom: '20px' }}>📝</div>
+            <p>まだ投稿がありません</p>
+          </div>
+        ) : (
+          posts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              showApprovalStatus
+              onClick={() => {
+                // TODO: 投稿詳細ページに遷移
+                console.log('Post clicked:', post.id);
+              }}
+              onDelete={() => handleDeletePost(post.id)}
+            />
+          ))
+        )}
+      </div>
+
+      <Footer />
+    </div>
+  );
+};
+
