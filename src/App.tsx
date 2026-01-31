@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { LoadingPage } from './pages/LoadingPage';
 import { HomePage } from './pages/HomePage';
