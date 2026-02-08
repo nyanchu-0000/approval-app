@@ -13,7 +13,6 @@ export const CreatePostPage: React.FC = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [image, setImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | undefined>(undefined);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -38,13 +37,6 @@ export const CreatePostPage: React.FC = () => {
 
   const handleImageSelect = (file: File) => {
     setImage(file);
-    
-    // プレビュー用にBase64に変換
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async () => {
@@ -152,23 +144,6 @@ export const CreatePostPage: React.FC = () => {
               画像
             </label>
             <ImageUpload onImageSelect={handleImageSelect} disabled={loading} />
-            {imagePreview && (
-              <div style={{
-                marginTop: '12px',
-                borderRadius: '8px',
-                overflow: 'hidden'
-              }}>
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  style={{
-                    width: '100%',
-                    height: 'auto',
-                    display: 'block'
-                  }}
-                />
-              </div>
-            )}
           </div>
 
           {/* 内容入力 */}
