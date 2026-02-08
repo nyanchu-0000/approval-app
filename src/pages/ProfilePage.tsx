@@ -205,7 +205,7 @@ export const ProfilePage: React.FC = () => {
                   justifyContent: 'center',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
                 }}>
-                  <span style={{ fontSize: '18px' }}>📷</span>
+                  <span style={{ fontSize: '18px' }}>+</span>
                 </div>
               )}
             </div>
@@ -299,33 +299,39 @@ export const ProfilePage: React.FC = () => {
               gap: '12px',
               marginBottom: '20px'
             }}>
-              <Button
-                onClick={handleSaveProfile}
-                variant="primary"
-                style={{ flex: 1 }}
-              >
-                保存
-              </Button>
-              <Button
-                onClick={() => {
-                  setIsEditing(false);
-                  setEditUsername(currentUser.username);
-                  setEditBio(currentUser.bio || '');
-                }}
-                variant="secondary"
-                style={{ flex: 1 }}
-              >
-                キャンセル
-              </Button>
+              <div style={{ flex: 1 }}>
+                <Button
+                  onClick={handleSaveProfile}
+                  variant="primary"
+                  fullWidth
+                >
+                  保存
+                </Button>
+              </div>
+              <div style={{ flex: 1 }}>
+                <Button
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditUsername(currentUser.username);
+                    setEditBio(currentUser.bio || '');
+                  }}
+                  variant="secondary"
+                  fullWidth
+                >
+                  キャンセル
+                </Button>
+              </div>
             </div>
           ) : (
-            <Button
-              onClick={() => setIsEditing(true)}
-              variant="secondary"
-              style={{ width: '100%', marginBottom: '20px' }}
-            >
-              プロフィールを編集
-            </Button>
+            <div style={{ marginBottom: '20px' }}>
+              <Button
+                onClick={() => setIsEditing(true)}
+                variant="secondary"
+                fullWidth
+              >
+                プロフィールを編集
+              </Button>
+            </div>
           )}
 
           {/* ユーザーID */}
@@ -395,7 +401,7 @@ export const ProfilePage: React.FC = () => {
               <Button
                 onClick={handleRemoveFriend}
                 variant="secondary"
-                style={{ width: '100%' }}
+                fullWidth
               >
                 フレンドを解除
               </Button>
@@ -413,7 +419,7 @@ export const ProfilePage: React.FC = () => {
               <Button
                 onClick={() => navigate('/add-friend')}
                 variant="primary"
-                style={{ width: '100%' }}
+                fullWidth
               >
                 フレンドを追加
               </Button>
@@ -422,18 +428,23 @@ export const ProfilePage: React.FC = () => {
         </div>
 
         {/* ログアウトボタン */}
-        <Button
+        <button
           onClick={() => setShowLogoutModal(true)}
-          variant="secondary"
           style={{
             width: '100%',
+            padding: '12px 24px',
             backgroundColor: '#fff',
             color: '#c33',
-            border: '1px solid #c33'
+            border: '1px solid #c33',
+            borderRadius: '8px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
           }}
         >
           ログアウト
-        </Button>
+        </button>
       </div>
 
       {/* ログアウト確認モーダル */}
@@ -471,23 +482,32 @@ export const ProfilePage: React.FC = () => {
               display: 'flex',
               gap: '12px'
             }}>
-              <Button
+              <button
                 onClick={handleLogout}
-                variant="primary"
                 style={{
                   flex: 1,
-                  backgroundColor: '#c33'
+                  padding: '12px 24px',
+                  backgroundColor: '#c33',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
                 }}
               >
                 ログアウト
-              </Button>
-              <Button
-                onClick={() => setShowLogoutModal(false)}
-                variant="secondary"
-                style={{ flex: 1 }}
-              >
-                キャンセル
-              </Button>
+              </button>
+              <div style={{ flex: 1 }}>
+                <Button
+                  onClick={() => setShowLogoutModal(false)}
+                  variant="secondary"
+                  fullWidth
+                >
+                  キャンセル
+                </Button>
+              </div>
             </div>
           </div>
         </div>

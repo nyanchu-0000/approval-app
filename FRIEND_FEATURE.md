@@ -113,3 +113,4 @@ interface FriendStatus {
 - フレンド解除の確認ダイアログ改善
 
 
+
