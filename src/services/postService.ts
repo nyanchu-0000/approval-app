@@ -27,9 +27,12 @@ export const postService = {
     // ユーザー情報を取得
     const { data: userData } = await supabase
       .from('users')
-      .select('username, profile_icon')
+      .select('username, profile_icon, profile_icon_url')
       .eq('uid', userId)
       .single();
+
+    // プロフィールアイコンの優先順位: profile_icon_url > profile_icon > デフォルト
+    const userProfileIcon = userData?.profile_icon_url || userData?.profile_icon || '/dummy-app-icon.svg';
 
     // 投稿を作成
     const { data, error } = await supabase
@@ -37,7 +40,7 @@ export const postService = {
       .insert({
         user_id: userId,
         username: userData?.username || 'ユーザー',
-        user_profile_icon: userData?.profile_icon || '/dummy-app-icon.svg',
+        user_profile_icon: userProfileIcon,
         title: input.title,
         content: input.content,
         image_url: imageUrl,
