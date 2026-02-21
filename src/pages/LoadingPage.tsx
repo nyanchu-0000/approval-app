@@ -5,12 +5,12 @@ export const LoadingPage: React.FC = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#4a9d8f',
+      backgroundColor: '#D4E7F5',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      color: 'white'
+      color: '#333'
     }}>
       <div style={{ marginBottom: '30px' }}>
         <img
@@ -31,8 +31,8 @@ export const LoadingPage: React.FC = () => {
       <div style={{
         width: '40px',
         height: '40px',
-        border: '4px solid rgba(255, 255, 255, 0.3)',
-        borderTop: '4px solid white',
+        border: '4px solid rgba(0, 0, 0, 0.1)',
+        borderTop: '4px solid #4a9d8f',
         borderRadius: '50%',
         animation: 'spin 1s linear infinite'
       }} />
