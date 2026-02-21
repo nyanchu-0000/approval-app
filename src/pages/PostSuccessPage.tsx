@@ -32,7 +32,6 @@ export const PostSuccessPage: React.FC = () => {
           boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
           maxWidth: '400px'
         }}>
-          <div style={{ fontSize: '80px', marginBottom: '20px' }}>✅</div>
           <h2 style={{
             fontSize: '24px',
             fontWeight: 'bold',

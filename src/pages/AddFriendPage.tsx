@@ -5,7 +5,7 @@ import { Footer } from "../components/common/Footer";
 import { Button } from "../components/common/Button";
 import { authService } from "../services/authService";
 import { userService } from "../services/userService";
-import { User } from "../types/user";
+import type { User } from "../types/user";
 
 export const AddFriendPage: React.FC = () => {
     const navigate = useNavigate();
