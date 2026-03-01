@@ -52,6 +52,9 @@ export const PostSuccessPage: React.FC = () => {
             <Button onClick={() => navigate('/')} fullWidth>
               ホームに戻る
             </Button>
+            <Button onClick={() => navigate('/create-post')} variant="primary" fullWidth>
+              投稿を続ける
+            </Button>
             <Button onClick={() => navigate('/posts')} variant="outline" fullWidth>
               投稿一覧を見る
             </Button>
