@@ -14,8 +14,8 @@ export const itemService = {
     if (!data) return [];
 
     return data.map(item => ({
-      itemId: item.item_id,
-      position: item.position,
+      itemId: Number(item.item_id),
+      position: Number(item.position),
       obtainedAt: new Date(item.obtained_at),
     }));
   },
@@ -37,7 +37,7 @@ export const itemService = {
             user_id: userId,
             item_id: p.itemId,
             position: p.position,
-            obtained_at: p.obtainedAt.toISOString(),
+            obtained_at: (p.obtainedAt || new Date()).toISOString(),
           }))
         );
 
@@ -53,7 +53,7 @@ export const itemService = {
         user_id: userId,
         item_id: placement.itemId,
         position: placement.position,
-        obtained_at: placement.obtainedAt.toISOString(),
+        obtained_at: (placement.obtainedAt || new Date()).toISOString(),
       }, {
         onConflict: 'user_id,position'
       });

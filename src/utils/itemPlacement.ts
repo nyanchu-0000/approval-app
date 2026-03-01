@@ -3,6 +3,7 @@ import { ITEMS, type Item } from './items';
 export interface PlacedItem {
   itemId: number;
   position: number; // 0-149の位置
+  obtainedAt?: Date; // 取得日時（オプショナル）
 }
 
 const STORAGE_KEY = 'userItemPlacements';
@@ -33,9 +34,7 @@ export const saveUserItemPlacements = (userId: string, placements: PlacedItem[])
 /**
  * ランクに基づいて新しいアイテムを追加（ランダムな空き位置に配置）
  */
-export const updateItemsForRank = (userId: string, currentRank: number): PlacedItem[] => {
-  const existingPlacements = getUserItemPlacements(userId);
-  
+export const updateItemsForRank = (userId: string, currentRank: number, existingPlacements: PlacedItem[] = []): PlacedItem[] => {
   // 既に配置されているアイテム数
   const placedCount = existingPlacements.length;
   
@@ -75,12 +74,10 @@ export const updateItemsForRank = (userId: string, currentRank: number): PlacedI
     
     newPlacements.push({
       itemId,
-      position
+      position,
+      obtainedAt: new Date()
     });
   }
-  
-  // 保存
-  saveUserItemPlacements(userId, newPlacements);
   
   return newPlacements;
 };
@@ -99,7 +96,11 @@ export const getItemAtPosition = (placements: PlacedItem[], position: number): I
   const placement = placements.find(p => p.position === position);
   if (!placement) return undefined;
   
-  return getItemById(placement.itemId);
+  console.log(`位置 ${position} の配置情報:`, placement);
+  const item = getItemById(placement.itemId);
+  console.log(`アイテムID ${placement.itemId} の検索結果:`, item);
+  
+  return item;
 };
 
 /**

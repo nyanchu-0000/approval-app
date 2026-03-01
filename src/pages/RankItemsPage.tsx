@@ -31,19 +31,29 @@ export const RankItemsPage: React.FC = () => {
       const calculatedRank = Math.floor(count / 5);
       setRank(calculatedRank);
       
+      console.log('🔍 デバッグ情報:');
+      console.log('投稿数:', count);
+      console.log('ランク:', calculatedRank);
+      
       // Supabaseからアイテム配置を取得
       const savedPlacements = await itemService.getItemPlacements(currentUser.uid);
+      console.log('Supabaseから取得したアイテム:', savedPlacements);
       
-      // 新しいアイテムを計算
-      const updatedPlacements = updateItemsForRank(currentUser.uid, calculatedRank);
+      // 新しいアイテムを計算（既存のアイテム配置を渡す）
+      const updatedPlacements = updateItemsForRank(currentUser.uid, calculatedRank, savedPlacements);
+      console.log('更新後のアイテム:', updatedPlacements);
       
       // 既存のアイテムと比較して、新しいアイテムがあれば保存
       if (updatedPlacements.length > savedPlacements.length) {
+        console.log('新しいアイテムを保存します');
         await itemService.saveItemPlacements(currentUser.uid, updatedPlacements);
         setPlacements(updatedPlacements);
       } else {
-        setPlacements(savedPlacements.length > 0 ? savedPlacements : updatedPlacements);
+        console.log('既存のアイテムを使用します');
+        setPlacements(savedPlacements);
       }
+      
+      console.log('最終的にセットされたアイテム数:', updatedPlacements.length > savedPlacements.length ? updatedPlacements.length : savedPlacements.length);
     } catch (error) {
       console.error('データの読み込みに失敗:', error);
     } finally {
@@ -60,6 +70,11 @@ export const RankItemsPage: React.FC = () => {
     for (let i = 0; i < rows * cols; i++) {
       const item = getItemAtPosition(placements, i);
       const hasItem = !!item;
+      
+      // デバッグ: アイテムが見つかった場合
+      if (hasItem) {
+        console.log(`位置 ${i} にアイテム発見:`, item);
+      }
       
       items.push(
         <div
@@ -90,6 +105,9 @@ export const RankItemsPage: React.FC = () => {
             }}>
               <ItemIcon item={item} size={45} />
             </div>
+          )}
+          {hasItem && !item && (
+            <div style={{ fontSize: '10px', color: 'red' }}>ERR</div>
           )}
         </div>
       );
@@ -220,6 +238,25 @@ export const RankItemsPage: React.FC = () => {
         }}>
           {renderItemGrid()}
         </div>
+        
+        {/* デバッグ情報 */}
+        {placements.length > 0 && (
+          <div style={{
+            marginTop: '20px',
+            padding: '15px',
+            backgroundColor: 'rgba(255, 255, 255, 0.5)',
+            borderRadius: '12px',
+            fontSize: '12px',
+            color: '#333'
+          }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>デバッグ情報:</div>
+            {placements.map((p, index) => (
+              <div key={index}>
+                アイテムID: {p.itemId}, 位置: {p.position}
+              </div>
+            ))}
+          </div>
+        )}
         </div>
       )}
 
