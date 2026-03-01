@@ -7,6 +7,7 @@ interface ButtonProps {
   fullWidth?: boolean;
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
+  style?: React.CSSProperties;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -15,7 +16,8 @@ export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   fullWidth = false,
   disabled = false,
-  type = 'button'
+  type = 'button',
+  style
 }) => {
   const getBackgroundColor = () => {
     if (disabled) return '#ccc';
@@ -68,7 +70,8 @@ export const Button: React.FC<ButtonProps> = ({
         fontWeight: 'bold',
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'all 0.2s',
-        opacity: disabled ? 0.6 : 1
+        opacity: disabled ? 0.6 : 1,
+        ...style
       }}
     >
       {children}
