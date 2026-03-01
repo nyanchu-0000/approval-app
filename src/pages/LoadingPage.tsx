@@ -25,7 +25,7 @@ export const LoadingPage: React.FC = () => {
         fontWeight: 'bold',
         marginBottom: '20px'
       }}>
-        承認アプリ
+        ZzzCast
       </h1>
       
       <div style={{
