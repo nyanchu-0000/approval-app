@@ -7,6 +7,7 @@ import { Button } from '../components/common/Button';
 import { authService } from '../services/authService';
 import { userService } from '../services/userService';
 import type { User, UserProfile } from '../types/user';
+import heic2any from 'heic2any';
 
 export const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
@@ -51,48 +52,69 @@ export const ProfilePage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file || !currentUser) return;
 
-    // 画像をリサイズしてBase64に変換
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = async () => {
-        const canvas = document.createElement('canvas');
-        const maxSize = 300;
-        let width = img.width;
-        let height = img.height;
+    try {
+      let processedFile = file;
 
-        if (width > height) {
-          if (width > maxSize) {
-            height *= maxSize / width;
-            width = maxSize;
+      if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')) {
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8
+        });
+
+        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        processedFile = new File(
+          [blob],
+          file.name.replace(/\.heic$/i, '.jpg'),
+          { type: 'image/jpeg' }
+        );
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          const maxSize = 300;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxSize) {
+              height *= maxSize / width;
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width *= maxSize / height;
+              height = maxSize;
+            }
           }
-        } else {
-          if (height > maxSize) {
-            width *= maxSize / height;
-            height = maxSize;
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          const base64String = canvas.toDataURL('image/jpeg', 0.8);
+          
+          try {
+            await userService.updateProfile(currentUser.uid, {
+              profileIconUrl: base64String
+            });
+            await loadUserData();
+          } catch (error) {
+            console.error('プロフィール画像の更新に失敗:', error);
+            alert('画像の更新に失敗しました');
           }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-
-        const base64String = canvas.toDataURL('image/jpeg', 0.8);
-        
-        try {
-          await userService.updateProfile(currentUser.uid, {
-            profileIconUrl: base64String
-          });
-          await loadUserData();
-        } catch (error) {
-          console.error('プロフィール画像の更新に失敗:', error);
-          alert('画像の更新に失敗しました');
-        }
+        };
+        img.src = event.target?.result as string;
       };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(processedFile);
+    } catch (error) {
+      console.error('画像の処理に失敗しました:', error);
+      alert('画像の処理に失敗しました。別の画像を選択してください。');
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -212,7 +234,7 @@ export const ProfilePage: React.FC = () => {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/*,.heic"
               onChange={handleImageSelect}
               style={{ display: 'none' }}
             />
