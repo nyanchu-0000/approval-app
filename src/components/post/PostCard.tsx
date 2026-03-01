@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Post } from '../../types';
+import type { Post } from '../../types';
 import { ProfileIcon } from '../common/ProfileIcon';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -37,7 +37,7 @@ export const PostCard: React.FC<PostCardProps> = ({
     };
   }, [showMenu]);
 
-  const handleCardClick = (e: React.MouseEvent) => {
+  const handleCardClick = () => {
     if (onClick) {
       onClick();
     }
@@ -172,7 +172,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             maxHeight: '300px',
             objectFit: 'cover'
           }}
-          onError={(e) => {
+          onError={() => {
             console.error('画像の読み込みに失敗しました:', post.id);
             console.error('imageUrl length:', post.imageUrl?.length);
             console.error('imageUrl preview:', post.imageUrl?.substring(0, 50));

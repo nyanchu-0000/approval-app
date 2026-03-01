@@ -34,7 +34,7 @@ export const saveUserItemPlacements = (userId: string, placements: PlacedItem[])
 /**
  * ランクに基づいて新しいアイテムを追加（ランダムな空き位置に配置）
  */
-export const updateItemsForRank = (userId: string, currentRank: number, existingPlacements: PlacedItem[] = []): PlacedItem[] => {
+export const updateItemsForRank = (_userId: string, currentRank: number, existingPlacements: PlacedItem[] = []): PlacedItem[] => {
   // 既に配置されているアイテム数
   const placedCount = existingPlacements.length;
   

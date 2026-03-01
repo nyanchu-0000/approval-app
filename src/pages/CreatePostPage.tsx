@@ -6,7 +6,7 @@ import { ImageUpload } from '../components/post/ImageUpload';
 import { Button } from '../components/common/Button';
 import { authService } from '../services/authService';
 import { postService } from '../services/postService';
-import { User } from '../types/user';
+import type { User } from '../types/user';
 
 export const CreatePostPage: React.FC = () => {
   const navigate = useNavigate();
@@ -56,7 +56,7 @@ export const CreatePostPage: React.FC = () => {
       await postService.createPost(currentUser.uid, {
         title: title.trim(),
         content: content.trim(),
-        image,
+        image: image || undefined,
         targetFriendId: currentUser.friendId,
       });
 

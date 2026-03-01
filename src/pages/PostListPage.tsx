@@ -4,8 +4,8 @@ import { Footer } from "../components/common/Footer";
 import { PostCard } from "../components/post/PostCard";
 import { authService } from "../services/authService";
 import { postService } from "../services/postService";
-import { Post } from "../types";
-import { User } from "../types/user";
+import type { Post } from "../types";
+import type { User } from "../types/user";
 
 export const PostListPage: React.FC = () => {
     const [posts, setPosts] = useState<Post[]>([]);
